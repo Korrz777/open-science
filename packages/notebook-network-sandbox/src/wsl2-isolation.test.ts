@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { wsl2Launch, type Wsl2Launch } from '../runtime/src/platform/wsl2-isolation.js'
+import {
+  mapWslUncPath,
+  wsl2Launch,
+  type Wsl2Launch
+} from '../runtime/src/platform/wsl2-isolation.js'
 import { notebookWorkloadCacheEnv } from '../../../src/main/notebook/notebook-workload-cache-paths.js'
 
 const mapped = new Map([
@@ -662,5 +666,29 @@ describe('WSL2 sandbox adapter', () => {
         mapPath: async (path) => `/mnt/c/${path.slice(3).replaceAll('\\', '/')}`
       })
     ).rejects.toThrow('WSL2 sandbox path environment key is reserved')
+  })
+})
+
+describe('mapWslUncPath', () => {
+  it('maps Explorer-style distro paths straight to the guest', () => {
+    expect(mapWslUncPath('\\\\wsl.localhost\\Ubuntu\\home\\researcher\\project', 'Ubuntu')).toBe(
+      '/home/researcher/project'
+    )
+    expect(mapWslUncPath('\\\\wsl$\\Ubuntu\\home\\researcher\\Documents\\archive', 'Ubuntu')).toBe(
+      '/home/researcher/Documents/archive'
+    )
+  })
+
+  it('is case-insensitive on the host and distro segments', () => {
+    expect(mapWslUncPath('\\\\WSL.LOCALHOST\\UBUNTU\\home\\researcher', 'ubuntu')).toBe(
+      '/home/researcher'
+    )
+  })
+
+  it('leaves drive-letter paths and other distros to wslpath', () => {
+    expect(mapWslUncPath('E:\\OpenScience\\data', 'Ubuntu')).toBeUndefined()
+    expect(mapWslUncPath('\\\\wsl.localhost\\Debian\\home\\researcher', 'Ubuntu')).toBeUndefined()
+    expect(mapWslUncPath('\\\\wsl.localhost\\Ubuntu\\', 'Ubuntu')).toBeUndefined()
+    expect(mapWslUncPath('/home/researcher', 'Ubuntu')).toBeUndefined()
   })
 })
