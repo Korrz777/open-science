@@ -685,10 +685,50 @@ describe('mapWslUncPath', () => {
     )
   })
 
-  it('leaves drive-letter paths and other distros to wslpath', () => {
+  it('maps distro roots and rejects drive-letter paths and other distros', () => {
     expect(mapWslUncPath('E:\\OpenScience\\data', 'Ubuntu')).toBeUndefined()
     expect(mapWslUncPath('\\\\wsl.localhost\\Debian\\home\\researcher', 'Ubuntu')).toBeUndefined()
-    expect(mapWslUncPath('\\\\wsl.localhost\\Ubuntu\\', 'Ubuntu')).toBeUndefined()
+    expect(mapWslUncPath('\\\\wsl.localhost\\Ubuntu', 'Ubuntu')).toBe('/')
+    expect(mapWslUncPath('\\\\wsl.localhost\\Ubuntu\\', 'Ubuntu')).toBe('/')
     expect(mapWslUncPath('/home/researcher', 'Ubuntu')).toBeUndefined()
+  })
+
+  it('authorizes same-distro UNC path environment values before mapping them', async () => {
+    const unc = '\\\\wsl.localhost\\Ubuntu\\home\\researcher\\data'
+    const mapPath = vi.fn(async (path: string) => mapWslUncPath(path, 'Ubuntu') ?? path)
+    const launch = await wsl2Launch({
+      target: {
+        kind: 'wsl2',
+        profileId: 'unc-profile',
+        distro: 'Ubuntu',
+        user: 'open-science-spike'
+      },
+      command: 'pwd',
+      cwd: unc,
+      env: {},
+      pathEnvironment: { OPEN_SCIENCE_INPUT_DIR: unc },
+      filesystem: {
+        readOnlyRoots: [unc],
+        readWriteRoots: [],
+        deniedReadRoots: [],
+        deniedWriteRoots: []
+      },
+      reconcileGuest: reconciled,
+      mapPath,
+      gatewayPort: 4312,
+      gatewayCredentials: { username: 'command-user', password: 'command-secret' },
+      openBridge: async () => ({
+        socketPath: '/tmp/open-science-network-command/gateway.sock',
+        close: async () => ({ networkClosed: true, temporaryResourcesRemoved: true })
+      })
+    })
+    try {
+      expect(launch.argv).toEqual(
+        expect.arrayContaining(['--setenv', 'OPEN_SCIENCE_INPUT_DIR', '/home/researcher/data'])
+      )
+      expect(launch.argv).toEqual(expect.arrayContaining(['--chdir', '/home/researcher/data']))
+    } finally {
+      await launch.release()
+    }
   })
 })

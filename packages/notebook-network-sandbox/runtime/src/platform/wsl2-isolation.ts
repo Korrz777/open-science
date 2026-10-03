@@ -468,7 +468,10 @@ const openWsl2GatewayBridge: Wsl2GatewayBridgeOpener = async ({
   return bridge
 }
 
-const WSL_UNC_PREFIX = /^\\\\(wsl\.localhost|wsl\$)\\([^\\]+)\\(.+)$/isu
+const WSL_UNC_PREFIX = /^\\\\(wsl\.localhost|wsl\$)\\([^\\]+)(?:\\(.*))?$/isu
+
+const isWindowsPath = (path: string): boolean =>
+  WINDOWS_PATH.test(path) || WSL_UNC_PREFIX.test(path)
 
 /**
  * Translates a `\\wsl.localhost\<distro>\...` (or legacy `\\wsl$\...`) path
@@ -482,7 +485,7 @@ export const mapWslUncPath = (path: string, distro: string): string | undefined 
   const match = WSL_UNC_PREFIX.exec(path)
   if (!match) return undefined
   if (match[2].toLowerCase() !== distro.toLowerCase()) return undefined
-  const guest = `/${match[3].replace(/\\/g, '/')}`
+  const guest = `/${(match[3] ?? '').replace(/\\/g, '/')}`
   if (/[\0\r\n]/u.test(guest)) return undefined
   return guest
 }
@@ -719,7 +722,7 @@ const createGuestEnvironment = async (
       throw new Error('WSL2 sandbox path environment key is reserved.')
     }
     if (
-      !WINDOWS_PATH.test(value) ||
+      !isWindowsPath(value) ||
       ![...request.filesystem.readOnlyRoots, ...request.filesystem.readWriteRoots].some((root) =>
         containsWindowsPath(root, value)
       )
