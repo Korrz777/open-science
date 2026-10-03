@@ -479,6 +479,57 @@ describe('PreviewTextAnnotationSurface', () => {
     expect(registeredRanges.size).toBe(0)
   })
 
+  it('skips a saved bookmark whose quote no longer resolves instead of throwing', async () => {
+    // Regression: a bookmark saved on v1 of a regenerated artifact keeps matching
+    // the preview by version identity, but its quote is gone from the new content.
+    // reconcileTextAnnotationRanges then omits the id and the mount-time highlight
+    // loop must skip it — Highlight.add(undefined) throws a TypeError in browsers,
+    // which crashed the whole workspace on every session open (reload loop).
+    const stale: Bookmark = {
+      id: 'bookmark-stale-quote',
+      projectId: 'project-1',
+      sessionId: 'session-1',
+      version: 1,
+      note: 'v1 note',
+      createdAt: '2026-09-14T00:00:00.000Z',
+      updatedAt: '2026-09-14T00:00:00.000Z',
+      target: {
+        kind: 'text',
+        quote: 'quote removed when the report was regenerated',
+        source: {
+          kind: 'project-file',
+          projectId: 'project-1',
+          path: '/project/notes.md',
+          name: 'notes.md',
+          fileSource: 'artifact',
+          sourceFileId: 'artifact-1',
+          versionId: 'version-7',
+          sessionId: 'session-1'
+        }
+      }
+    }
+    const highlights = (
+      globalThis as unknown as { CSS: { highlights: { get: ReturnType<typeof vi.fn> } } }
+    ).CSS.highlights
+    highlights.get.mockImplementation(() => ({
+      add: (range: unknown) => {
+        if (!(range instanceof Range)) {
+          throw new TypeError(
+            "Failed to execute 'add' on 'Highlight': parameter 1 is not of type 'Range'."
+          )
+        }
+        registeredRanges.add(range)
+      },
+      delete: (range: Range) => registeredRanges.delete(range)
+    }))
+    const bookmarkApi = {
+      list: vi.fn().mockResolvedValue({ items: [stale], total: 1 })
+    } as unknown as Window['api']['bookmarks']
+    const previewItem = item({ managedFileId: 'artifact-1' })
+    await expect(renderSurface({ bookmarkApi, previewItem })).resolves.toBeUndefined()
+    expect(registeredRanges.size).toBe(0)
+  })
+
   it('reveals an exact project-file bookmark and reports a missing quote', async () => {
     await renderSurface({
       bookmarkApi: {

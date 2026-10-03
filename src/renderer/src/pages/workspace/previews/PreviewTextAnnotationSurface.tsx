@@ -604,9 +604,13 @@ export const PreviewTextAnnotationSurface = ({
     )
     for (const bookmark of matchingBookmarks) {
       if (bookmark.target.kind !== 'text') continue
-      getBookmarkHighlight('highlight', 'yellow')?.add(
-        ownedBookmarkRanges.current.get(bookmark.id)!
-      )
+      // The quote may be gone from regenerated content (e.g. a report the agent
+      // rewrote after the bookmark was saved): reconcileTextAnnotationRanges then
+      // omits the id and there is nothing to highlight. Skip it instead of throwing
+      // Highlight.add(undefined), which crashed the whole surface on every mount.
+      const range = ownedBookmarkRanges.current.get(bookmark.id)
+      if (!range) continue
+      getBookmarkHighlight('highlight', 'yellow')?.add(range)
     }
     measureAnnotationControls()
     retryPendingAnnotationReveal()
