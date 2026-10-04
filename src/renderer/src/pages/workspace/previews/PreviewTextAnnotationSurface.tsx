@@ -347,12 +347,13 @@ const getBookmarkHighlight = (
 
 const clearBookmarkHighlights = (ranges: Iterable<Range>): void => {
   if (!globalThis.CSS?.highlights) return
+  const ownedRanges = Array.from(ranges)
   const legacy = CSS.highlights.get(BOOKMARK_HIGHLIGHT_PREFIX)
-  for (const range of ranges) legacy?.delete(range)
+  for (const range of ownedRanges) legacy?.delete(range)
   for (const markKind of ['highlight', 'underline', 'squiggly', 'strikethrough', 'area'] as const) {
     for (const color of ['yellow', 'blue', 'green', 'pink', 'purple'] as const) {
       const highlight = CSS.highlights.get(bookmarkHighlightKey(markKind, color))
-      for (const range of ranges) highlight?.delete(range)
+      for (const range of ownedRanges) highlight?.delete(range)
     }
   }
 }
