@@ -1,10 +1,12 @@
 import type { TFunction } from 'i18next'
 import {
   ArrowUpRight,
+  AtSign,
   Boxes,
   Check,
   ChevronDown,
   Folder,
+  Loader2,
   Monitor,
   Paperclip,
   Plus,
@@ -37,6 +39,9 @@ import { ArtifactPreview } from './artifact-preview'
 import { ExtensionPreservingFileName } from './ExtensionPreservingFileName'
 import { FileTypeIcon } from './file-type-icon'
 import { ManagedFileDownloadButton } from './ManagedFileDownloadButton'
+import { mentionProjectFile } from './project-file-mention'
+import { useProjectFileMentionAvailability } from './use-project-file-mention-availability'
+import { useProjectFileMentionDrag } from './use-project-file-mention-drag'
 import type { MessageArtifact } from './preview-file-item'
 import { GrantedRootMenuRow } from './project-files-granted-root-menu-row'
 import { createProjectFilePreviewArtifact } from './project-files-preview-owner'
@@ -116,6 +121,7 @@ const formatRelativeFileTime = (
 // Hallmark · component: file-actions · genre: modern-minimal · theme: workspace tokens
 // states: default · hover · focus · active · disabled · download loading/error/success
 const FileActionButtons = ({
+  file,
   source,
   path,
   projectId,
@@ -125,6 +131,7 @@ const FileActionButtons = ({
   className,
   onOpenInPanel
 }: {
+  file: ProjectFileItem
   source: 'artifact' | 'upload'
   path: string
   projectId: string
@@ -136,6 +143,18 @@ const FileActionButtons = ({
 }): React.JSX.Element => {
   const { t } = useTranslation()
   const openLabel = t('Open {{name}} in split view beside the session', { name })
+  const mentionLabel = t('Mention {{name}}', { name })
+  const mentionable = useProjectFileMentionAvailability(file.projectId)
+  const [mentionPending, setMentionPending] = useState(false)
+  const runMention = async (): Promise<void> => {
+    if (mentionPending || disabled || !mentionable) return
+    setMentionPending(true)
+    try {
+      await mentionProjectFile(file)
+    } finally {
+      setMentionPending(false)
+    }
+  }
 
   return (
     <div
@@ -162,6 +181,26 @@ const FileActionButtons = ({
               variant="outline"
               size="icon-sm"
               className="cursor-pointer bg-bg-000/95 text-text-100 shadow-sm"
+              aria-label={mentionLabel}
+              disabled={disabled || !mentionable || mentionPending}
+              onClick={() => void runMention()}
+            >
+              {mentionPending ? (
+                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              ) : (
+                <AtSign aria-hidden="true" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{mentionLabel}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className="cursor-pointer bg-bg-000/95 text-text-100 shadow-sm"
               aria-label={openLabel}
               disabled={disabled}
               onClick={onOpenInPanel}
@@ -177,6 +216,7 @@ const FileActionButtons = ({
 }
 
 const FileTile = ({
+  file,
   name,
   previewArtifact,
   preview,
@@ -190,6 +230,7 @@ const FileTile = ({
   onPreview,
   onOpenInPanel
 }: {
+  file: ProjectFileItem
   name: string
   previewArtifact: MessageArtifact
   preview?: ArtifactPreviewResult
@@ -217,11 +258,18 @@ const FileTile = ({
     size,
     mtimeMs: timestamp
   })
+  const mentionable = useProjectFileMentionAvailability(file.projectId)
+  const mentionDrag = useProjectFileMentionDrag(file, { disabled: missing || !mentionable })
 
   return (
     // The focus ring stays non-inset: an inset ring paints below the opaque preview area, so the
     // focus returned by the preview dialog (Escape) would show only the ring's bottom half.
-    <div className="group relative h-[128px] min-w-0 overflow-hidden rounded-lg border border-border-300/50 bg-bg-000 shadow-sm hover:border-border-200 hover:bg-bg-100 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/50">
+    <div
+      className="group relative h-[128px] min-w-0 overflow-hidden rounded-lg border border-border-300/50 bg-bg-000 shadow-sm hover:border-border-200 hover:bg-bg-100 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/50"
+      draggable={mentionDrag.draggable}
+      onDragStart={mentionDrag.onDragStart}
+      onDragEnd={mentionDrag.onDragEnd}
+    >
       <button
         ref={setTileElement}
         type="button"
@@ -274,6 +322,7 @@ const FileTile = ({
         </span>
       </button>
       <FileActionButtons
+        file={file}
         source={source}
         path={previewArtifact.path}
         projectId={projectId}
@@ -312,11 +361,18 @@ const FileListRow = ({
     size: file.size,
     mtimeMs: file.mtimeMs
   })
+  const mentionable = useProjectFileMentionAvailability(file.projectId)
+  const mentionDrag = useProjectFileMentionDrag(file, { disabled: missing || !mentionable })
   const sizeLabel = formatByteSize(file.size)
   const relativeTimeLabel = formatRelativeFileTime(file.mtimeMs ?? file.sortAtMs, t)
 
   return (
-    <div className="group relative flex h-9 min-w-0 items-center rounded-md text-text-000 transition-colors duration-150 hover:bg-bg-200 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50 has-[:focus-visible]:ring-inset motion-reduce:transition-none">
+    <div
+      className="group relative flex h-9 min-w-0 items-center rounded-md text-text-000 transition-colors duration-150 hover:bg-bg-200 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-ring/50 has-[:focus-visible]:ring-inset motion-reduce:transition-none"
+      draggable={mentionDrag.draggable}
+      onDragStart={mentionDrag.onDragStart}
+      onDragEnd={mentionDrag.onDragEnd}
+    >
       <button
         ref={setRowElement}
         type="button"
@@ -349,6 +405,7 @@ const FileListRow = ({
         ) : null}
       </button>
       <FileActionButtons
+        file={file}
         source={file.source}
         path={file.path}
         projectId={file.projectId}
@@ -408,6 +465,7 @@ const ProjectFileItems = ({
         return (
           <FileTile
             key={file.id}
+            file={file}
             name={file.name}
             previewArtifact={createProjectFilePreviewArtifact(file)}
             preview={previewById.get(file.id)}

@@ -11,8 +11,11 @@ import {
 import { SessionInfoPopover } from './SessionInfoPopover'
 import { SessionHeaderMenu } from './SessionHeaderMenu'
 import { sessionExportLocked, usePackageOperationStore } from '@/stores/package-operation-store'
+import { useNavigationStore } from '@/stores/navigation-store'
 import { AnnotationTransferSource } from './annotations/AnnotationTransferSource'
 import { useAnnotationDrop } from './annotations/use-annotation-drop'
+import { mentionProjectFile } from './project-file-mention'
+import { useProjectFileMentionDrop } from './use-project-file-mention-drop'
 import { UnavailablePlanNotice } from './session-plan/UnavailablePlanNotice'
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 */
 import type { TFunction } from 'i18next'
@@ -570,6 +573,23 @@ const ConversationPanel = ({
     parentSessionId: activeSession?.id ?? '',
     disabled: !canEditDraft || !activeSession,
     receive: ({ annotation }) => !onAddAnnotation(annotation)
+  })
+  // Dropping a file card from the project Files view mentions it in this composer: the drop only
+  // resolves the head Version and hands the reference to the same store request the `@` popup and
+  // Global Search use, so the chip and its guards stay identical across entry points.
+  const fileMentionDrop = useProjectFileMentionDrop({
+    disabled: !canEditDraft || !activeSession,
+    receive: async ({ projectId, file }) => {
+      const navigation = useNavigationStore.getState()
+      const availability = navigation.artifactMentionAvailability
+      if (
+        navigation.activeProjectId !== projectId ||
+        availability?.projectId !== projectId ||
+        !availability.canMention
+      )
+        return false
+      return (await mentionProjectFile(file)) === 'mentioned'
+    }
   })
   const handleAddTranscriptAnnotation = useCallback(
     (annotation: TextAnnotation): AnnotationValidationError | undefined => {
@@ -2121,6 +2141,7 @@ const ConversationPanel = ({
                         data-specialist-color={specialistComposerColor}
                         onSubmit={(event) => event.preventDefault()}
                         {...annotationDrop.props}
+                        {...fileMentionDrop.props}
                       >
                         {annotationDrop.over ? (
                           <div className="rounded-md border border-primary px-2 py-1 text-xs text-text-200">
@@ -2132,6 +2153,16 @@ const ConversationPanel = ({
                             {t(
                               'Could not move this annotation. It may have changed or the target is full.'
                             )}
+                          </p>
+                        ) : null}
+                        {fileMentionDrop.over ? (
+                          <div className="rounded-md border border-primary px-2 py-1 text-xs text-text-200">
+                            {t('Drop to mention in chat')}
+                          </div>
+                        ) : null}
+                        {fileMentionDrop.error ? (
+                          <p role="alert" className="text-xs text-danger-000">
+                            {t('Could not resolve file version.')}
                           </p>
                         ) : null}
                         {specialistComposerColor && selectedSpecialist ? (
