@@ -2140,8 +2140,21 @@ const ConversationPanel = ({
                         )}
                         data-specialist-color={specialistComposerColor}
                         onSubmit={(event) => event.preventDefault()}
-                        {...annotationDrop.props}
-                        {...fileMentionDrop.props}
+                        // Both drop hooks own the same capture-phase props, so compose them instead
+                        // of spreading one over the other: each handler ignores foreign transfers and
+                        // only the matching lane acts, keeping annotation drops and file mentions alive.
+                        onDragOverCapture={(event) => {
+                          annotationDrop.props.onDragOverCapture(event)
+                          fileMentionDrop.props.onDragOverCapture(event)
+                        }}
+                        onDragLeaveCapture={(event) => {
+                          annotationDrop.props.onDragLeaveCapture(event)
+                          fileMentionDrop.props.onDragLeaveCapture(event)
+                        }}
+                        onDropCapture={(event) => {
+                          annotationDrop.props.onDropCapture(event)
+                          fileMentionDrop.props.onDropCapture(event)
+                        }}
                       >
                         {annotationDrop.over ? (
                           <div className="rounded-md border border-primary px-2 py-1 text-xs text-text-200">
