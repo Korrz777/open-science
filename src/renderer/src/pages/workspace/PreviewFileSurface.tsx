@@ -206,10 +206,12 @@ const PreviewProvenanceButton = ({
 
 const ProjectFileMentionButton = ({
   target,
-  tooltipClassName
+  tooltipClassName,
+  onMentioned
 }: {
   target: ProjectFileMentionTarget
   tooltipClassName?: string
+  onMentioned?: () => void
 }): React.JSX.Element => {
   const { t } = useTranslation()
   const mention = useProjectFileMentionAction(target)
@@ -226,7 +228,11 @@ const ProjectFileMentionButton = ({
             aria-label={label}
             disabled={!mention.available || mention.pending}
             aria-busy={mention.pending}
-            onClick={() => void mention.mention()}
+            onClick={() => {
+              void mention.mention().then((mentioned) => {
+                if (mentioned) onMentioned?.()
+              })
+            }}
           >
             {mention.pending ? (
               <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -333,9 +339,10 @@ const PreviewFileHeader = ({
     ...(viewInContextEntry ? [viewInContextEntry] : [])
   ]
   // Managed artifact/upload previews can be mentioned in the chat straight from the open surface;
-  // local and literature previews carry no managed identity and never offer the action.
+  // local and literature previews carry no managed identity and never offer the action. An omitted
+  // source is the artifact default the preview projection uses for generated files.
   const mentionTarget = useMemo<ProjectFileMentionTarget | undefined>(() => {
-    const source = item.source
+    const source = item.source ?? 'artifact'
     if (!item.projectId || !item.managedFileId || (source !== 'artifact' && source !== 'upload')) {
       return undefined
     }
@@ -501,6 +508,7 @@ const PreviewFileHeader = ({
                 <ProjectFileMentionButton
                   target={mentionTarget}
                   tooltipClassName={tooltipClassName}
+                  onMentioned={onClose}
                 />
               ) : null}
               {item.originSession?.state === 'deleted' ? (

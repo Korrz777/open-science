@@ -267,9 +267,11 @@ describe('useProjectFileMentionAction', () => {
     window.api = { managedFileVersions: { inspect } } as unknown as Window['api']
     const { result } = renderHook(() => useProjectFileMentionAction(file()))
     expect(result.current.available).toBe(false)
+    let mentioned = true
     await act(async () => {
-      await result.current.mention()
+      mentioned = await result.current.mention()
     })
+    expect(mentioned).toBe(false)
     expect(inspect).not.toHaveBeenCalled()
   })
 
@@ -288,9 +290,11 @@ describe('useProjectFileMentionAction', () => {
     window.api = { managedFileVersions: { inspect } } as unknown as Window['api']
     const { result } = renderHook(() => useProjectFileMentionAction(file()))
     expect(result.current.available).toBe(true)
+    let mentioned = false
     await act(async () => {
-      await result.current.mention()
+      mentioned = await result.current.mention()
     })
+    expect(mentioned).toBe(true)
     expect(inspect).toHaveBeenCalledOnce()
     expect(useNavigationStore.getState().pendingArtifactMention).toMatchObject({
       projectId: 'project-1',
