@@ -1,6 +1,13 @@
 import { useNavigationStore } from '@/stores/navigation-store'
 import type { ProjectFileItem } from '../../../../shared/project-files'
 
+// Callers may hold a full project file row (cards, drag transfers) or only the managed identity
+// around a preview item (the open artifact header). Both resolve to the same immutable reference.
+export type ProjectFileMentionTarget = Pick<
+  ProjectFileItem,
+  'id' | 'source' | 'sourceFileId' | 'projectId' | 'name' | 'path'
+> & { mimeType?: string }
+
 export type ProjectFileMentionOutcome = 'mentioned' | 'unavailable' | 'version-unresolved'
 
 // Resolves the exact head Version through the public inspection surface (same flow the Global
@@ -8,7 +15,7 @@ export type ProjectFileMentionOutcome = 'mentioned' | 'unavailable' | 'version-u
 // request store no-ops for a different active project, so callers only need to gate on
 // availability before offering the action.
 export const mentionProjectFile = async (
-  file: ProjectFileItem
+  file: ProjectFileMentionTarget
 ): Promise<ProjectFileMentionOutcome> => {
   try {
     const response = await window.api.managedFileVersions.inspect({
@@ -21,8 +28,10 @@ export const mentionProjectFile = async (
       response.value.headVersion ??
       response.value.versions.find((item) => item.id === response.value.headVersionId)
     if (!head) return 'version-unresolved'
+    // The composer only reads the reference fields below; the resolved head Version replaces the
+    // index-time descriptor for the pending mention.
     useNavigationStore.getState().requestArtifactMention({
-      ...file,
+      ...(file as ProjectFileItem),
       sourceVersionId: head.id,
       checksum: head.checksum,
       sessionId: response.value.sessionId,

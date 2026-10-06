@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useNavigationStore } from '@/stores/navigation-store'
+import { useSessionStore } from '@/stores/session-store'
 import type { ProjectFileItem } from '../../../../shared/project-files'
 
 import { mentionProjectFile } from './project-file-mention'
 import { projectFileMentionTransfers } from './project-file-mention-transfer'
+import { useProjectFileMentionAction } from './use-project-file-mention-action'
 import { useProjectFileMentionDrag } from './use-project-file-mention-drag'
 import { useProjectFileMentionDrop } from './use-project-file-mention-drop'
 
@@ -75,6 +78,7 @@ beforeEach(() => {
     pendingArtifactMention: undefined,
     artifactMentionAvailability: undefined
   })
+  useSessionStore.setState({ sessions: [], selectedSessionId: undefined })
 })
 
 afterEach(() => {
@@ -87,6 +91,7 @@ afterEach(() => {
     pendingArtifactMention: undefined,
     artifactMentionAvailability: undefined
   })
+  useSessionStore.setState({ sessions: [], selectedSessionId: undefined })
 })
 
 describe('project file mention drag and drop', () => {
@@ -222,5 +227,74 @@ describe('mentionProjectFile', () => {
     } as unknown as Window['api']
     await expect(mentionProjectFile(file())).resolves.toBe('version-unresolved')
     expect(useNavigationStore.getState().pendingArtifactMention).toBeUndefined()
+  })
+})
+
+describe('useProjectFileMentionAction', () => {
+  const headVersion = {
+    id: 'head-1',
+    checksum: 'b'.repeat(64),
+    createdAt: '2026-10-05T00:00:00.000Z',
+    contentType: 'text/markdown',
+    sizeBytes: 7
+  }
+
+  const composerAvailable = (): void => {
+    useNavigationStore.setState({
+      view: 'workspace',
+      activeProjectId: 'project-1',
+      artifactMentionAvailability: { projectId: 'project-1', canMention: true }
+    })
+    useSessionStore.setState({
+      sessions: [
+        {
+          id: 'session-1',
+          projectId: 'project-1',
+          title: 'Session',
+          cwd: '/workspace',
+          status: 'idle',
+          createdAt: 1,
+          updatedAt: 1,
+          messages: []
+        }
+      ],
+      selectedSessionId: 'session-1'
+    })
+  }
+
+  it('reports unavailable and skips inspection without a mentionable composer', async () => {
+    const inspect = vi.fn()
+    window.api = { managedFileVersions: { inspect } } as unknown as Window['api']
+    const { result } = renderHook(() => useProjectFileMentionAction(file()))
+    expect(result.current.available).toBe(false)
+    await act(async () => {
+      await result.current.mention()
+    })
+    expect(inspect).not.toHaveBeenCalled()
+  })
+
+  it('mentions the file and resolves the head version when available', async () => {
+    composerAvailable()
+    const inspect = vi.fn(async () => ({
+      ok: true as const,
+      value: {
+        headVersionId: 'head-1',
+        versions: [headVersion],
+        headVersion,
+        sessionId: 'session-1',
+        displayName: 'report.md'
+      }
+    }))
+    window.api = { managedFileVersions: { inspect } } as unknown as Window['api']
+    const { result } = renderHook(() => useProjectFileMentionAction(file()))
+    expect(result.current.available).toBe(true)
+    await act(async () => {
+      await result.current.mention()
+    })
+    expect(inspect).toHaveBeenCalledOnce()
+    expect(useNavigationStore.getState().pendingArtifactMention).toMatchObject({
+      projectId: 'project-1',
+      sourceVersionId: 'head-1'
+    })
   })
 })

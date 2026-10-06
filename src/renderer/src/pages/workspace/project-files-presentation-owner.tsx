@@ -39,7 +39,7 @@ import { ArtifactPreview } from './artifact-preview'
 import { ExtensionPreservingFileName } from './ExtensionPreservingFileName'
 import { FileTypeIcon } from './file-type-icon'
 import { ManagedFileDownloadButton } from './ManagedFileDownloadButton'
-import { mentionProjectFile } from './project-file-mention'
+import { useProjectFileMentionAction } from './use-project-file-mention-action'
 import { useProjectFileMentionAvailability } from './use-project-file-mention-availability'
 import { useProjectFileMentionDrag } from './use-project-file-mention-drag'
 import type { MessageArtifact } from './preview-file-item'
@@ -144,17 +144,7 @@ const FileActionButtons = ({
   const { t } = useTranslation()
   const openLabel = t('Open {{name}} in split view beside the session', { name })
   const mentionLabel = t('Mention {{name}}', { name })
-  const mentionable = useProjectFileMentionAvailability(file.projectId)
-  const [mentionPending, setMentionPending] = useState(false)
-  const runMention = async (): Promise<void> => {
-    if (mentionPending || disabled || !mentionable) return
-    setMentionPending(true)
-    try {
-      await mentionProjectFile(file)
-    } finally {
-      setMentionPending(false)
-    }
-  }
+  const mention = useProjectFileMentionAction(file)
 
   return (
     <div
@@ -182,10 +172,11 @@ const FileActionButtons = ({
               size="icon-sm"
               className="cursor-pointer bg-bg-000/95 text-text-100 shadow-sm"
               aria-label={mentionLabel}
-              disabled={disabled || !mentionable || mentionPending}
-              onClick={() => void runMention()}
+              disabled={disabled || !mention.available || mention.pending}
+              aria-busy={mention.pending}
+              onClick={() => void mention.mention()}
             >
-              {mentionPending ? (
+              {mention.pending ? (
                 <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
               ) : (
                 <AtSign aria-hidden="true" />
