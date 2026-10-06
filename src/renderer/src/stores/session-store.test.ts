@@ -7557,6 +7557,7 @@ describe('session store public contract', () => {
       'src/renderer/src/pages/workspace/side-chat-availability.ts',
       'src/renderer/src/pages/workspace/tool-execution-phase.ts',
       'src/renderer/src/pages/workspace/use-pdf-context-action.ts',
+      'src/renderer/src/pages/workspace/use-project-file-mention-availability.ts',
       'src/renderer/src/pages/workspace/use-side-chat-controller.ts',
       'src/renderer/src/pages/workspace/use-workspace-branch-switch-guard.ts',
       'src/renderer/src/pages/workspace/useManagedVersionWorkflow.ts',
