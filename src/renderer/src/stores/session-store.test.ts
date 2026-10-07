@@ -7544,6 +7544,7 @@ describe('session store public contract', () => {
       'src/renderer/src/pages/workspace/previews/PreviewToolContent.tsx',
       'src/renderer/src/pages/workspace/previews/renderers/PdfPreview.tsx',
       'src/renderer/src/pages/workspace/previews/renderers/PlanJsonPreview.tsx',
+      'src/renderer/src/pages/workspace/project-file-mention.ts',
       'src/renderer/src/pages/workspace/project-files-query-model.ts',
       'src/renderer/src/pages/workspace/replay/ReplayToolRecord.tsx',
       'src/renderer/src/pages/workspace/session-action-menu.ts',
