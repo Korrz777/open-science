@@ -33,6 +33,7 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { ActionMenuItems, ActionMenuProvider, ActionMenuTarget } from '@/components/action-menu'
+import { ActionToast } from '@/components/ActionToast'
 import { ErrorNotice } from '@/components/error-notice'
 import { Button } from '@/components/ui/button'
 import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
@@ -243,6 +244,13 @@ const ProjectFileMentionButton = ({
         </TooltipTrigger>
         <TooltipContent className={tooltipClassName}>{label}</TooltipContent>
       </Tooltip>
+      {mention.error ? (
+        <ActionToast
+          title={t('Could not resolve file version.')}
+          dismissLabel={t('Dismiss')}
+          onDismiss={mention.dismissError}
+        />
+      ) : null}
     </TooltipProvider>
   )
 }

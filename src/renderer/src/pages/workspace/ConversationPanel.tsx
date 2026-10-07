@@ -578,7 +578,10 @@ const ConversationPanel = ({
   // resolves the head Version and hands the reference to the same store request the `@` popup and
   // Global Search use, so the chip and its guards stay identical across entry points.
   const fileMentionDrop = useProjectFileMentionDrop({
-    disabled: !canEditDraft || !activeSession,
+    disabled:
+      !canEditDraft ||
+      !activeSession ||
+      typeof window.api?.managedFileVersions?.inspect !== 'function',
     receive: async ({ projectId, file }) => {
       const navigation = useNavigationStore.getState()
       const availability = navigation.artifactMentionAvailability

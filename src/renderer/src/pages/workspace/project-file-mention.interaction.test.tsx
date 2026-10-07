@@ -71,12 +71,36 @@ const Drop = ({
   )
 }
 
+const composerAvailable = (): void => {
+  useNavigationStore.setState({
+    view: 'workspace',
+    activeProjectId: 'project-1',
+    artifactMentionAvailability: { projectId: 'project-1', canMention: true }
+  })
+  useSessionStore.setState({
+    sessions: [
+      {
+        id: 'session-1',
+        projectId: 'project-1',
+        title: 'Session',
+        cwd: '/workspace',
+        status: 'idle',
+        createdAt: 1,
+        updatedAt: 1,
+        messages: []
+      }
+    ],
+    selectedSessionId: 'session-1'
+  })
+}
+
 beforeEach(() => {
   useNavigationStore.setState({
     view: 'workspace',
     activeProjectId: 'project-1',
     pendingArtifactMention: undefined,
-    artifactMentionAvailability: undefined
+    artifactMentionAvailability: undefined,
+    explicitNavigationRevision: 0
   })
   useSessionStore.setState({ sessions: [], selectedSessionId: undefined })
 })
@@ -168,6 +192,7 @@ describe('project file mention drag and drop', () => {
 })
 
 describe('mentionProjectFile', () => {
+  beforeEach(composerAvailable)
   const headVersion = {
     id: 'head-1',
     checksum: 'a'.repeat(64),
@@ -228,6 +253,58 @@ describe('mentionProjectFile', () => {
     await expect(mentionProjectFile(file())).resolves.toBe('version-unresolved')
     expect(useNavigationStore.getState().pendingArtifactMention).toBeUndefined()
   })
+  it.each(['session', 'project', 'navigation', 'capacity', 'editable'])(
+    'rejects a mention when %s changes during inspection',
+    async (change) => {
+      let resolve!: (value: unknown) => void
+      const inspect = vi.fn(
+        () =>
+          new Promise((done) => {
+            resolve = done
+          })
+      )
+      window.api = { managedFileVersions: { inspect } } as unknown as Window['api']
+      const pending = mentionProjectFile(file())
+      if (change === 'session') useSessionStore.setState({ selectedSessionId: 'session-2' })
+      if (change === 'project') useNavigationStore.setState({ activeProjectId: 'project-2' })
+      if (change === 'navigation') useNavigationStore.setState({ explicitNavigationRevision: 1 })
+      if (change === 'capacity' || change === 'editable')
+        useNavigationStore.setState({
+          artifactMentionAvailability: { projectId: 'project-1', canMention: false }
+        })
+      resolve({
+        ok: true,
+        value: {
+          headVersion,
+          versions: [headVersion],
+          sessionId: 'session-1',
+          displayName: 'report.md'
+        }
+      })
+      await expect(pending).resolves.toBe('unavailable')
+      expect(useNavigationStore.getState().pendingArtifactMention).toBeUndefined()
+    }
+  )
+
+  it('rejects a second pending mention before the composer consumes the first', async () => {
+    window.api = {
+      managedFileVersions: {
+        inspect: vi.fn(async () => ({
+          ok: true,
+          value: {
+            headVersion,
+            versions: [headVersion],
+            sessionId: 'session-1',
+            displayName: 'report.md'
+          }
+        }))
+      }
+    } as unknown as Window['api']
+    await expect(
+      Promise.all([mentionProjectFile(file()), mentionProjectFile(file({ id: 'file-2' }))])
+    ).resolves.toEqual(['mentioned', 'unavailable'])
+    expect(useNavigationStore.getState().pendingArtifactMention?.id).toBe('file-1')
+  })
 })
 
 describe('useProjectFileMentionAction', () => {
@@ -237,29 +314,6 @@ describe('useProjectFileMentionAction', () => {
     createdAt: '2026-10-05T00:00:00.000Z',
     contentType: 'text/markdown',
     sizeBytes: 7
-  }
-
-  const composerAvailable = (): void => {
-    useNavigationStore.setState({
-      view: 'workspace',
-      activeProjectId: 'project-1',
-      artifactMentionAvailability: { projectId: 'project-1', canMention: true }
-    })
-    useSessionStore.setState({
-      sessions: [
-        {
-          id: 'session-1',
-          projectId: 'project-1',
-          title: 'Session',
-          cwd: '/workspace',
-          status: 'idle',
-          createdAt: 1,
-          updatedAt: 1,
-          messages: []
-        }
-      ],
-      selectedSessionId: 'session-1'
-    })
   }
 
   it('reports unavailable and skips inspection without a mentionable composer', async () => {
@@ -300,5 +354,70 @@ describe('useProjectFileMentionAction', () => {
       projectId: 'project-1',
       sourceVersionId: 'head-1'
     })
+  })
+  it('disables the action when the Web API has no version inspection capability', async () => {
+    composerAvailable()
+    window.api = {} as Window['api']
+    const { result } = renderHook(() => useProjectFileMentionAction(file()))
+    expect(result.current.available).toBe(false)
+    await act(async () => {
+      expect(await result.current.mention()).toBe(false)
+    })
+    expect(result.current.error).toBe(false)
+  })
+
+  it('reports inspection failures and clears the error on a successful retry', async () => {
+    composerAvailable()
+    const inspect = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('inspection failed'))
+      .mockResolvedValueOnce({
+        ok: true,
+        value: {
+          headVersion,
+          versions: [headVersion],
+          sessionId: 'session-1',
+          displayName: 'report.md'
+        }
+      })
+    window.api = { managedFileVersions: { inspect } } as unknown as Window['api']
+    const { result } = renderHook(() => useProjectFileMentionAction(file()))
+    await act(async () => {
+      expect(await result.current.mention()).toBe(false)
+    })
+    expect(result.current.error).toBe(true)
+    expect(result.current.pending).toBe(false)
+    await act(async () => {
+      expect(await result.current.mention()).toBe(true)
+    })
+    expect(result.current.error).toBe(false)
+  })
+
+  it('starts only one inspection for repeated clicks before a rerender', async () => {
+    composerAvailable()
+    let resolve!: (value: unknown) => void
+    const inspect = vi.fn(
+      () =>
+        new Promise((done) => {
+          resolve = done
+        })
+    )
+    window.api = { managedFileVersions: { inspect } } as unknown as Window['api']
+    const { result } = renderHook(() => useProjectFileMentionAction(file()))
+    await act(async () => {
+      const first = result.current.mention()
+      expect(await result.current.mention()).toBe(false)
+      resolve({
+        ok: true,
+        value: {
+          headVersion,
+          versions: [headVersion],
+          sessionId: 'session-1',
+          displayName: 'report.md'
+        }
+      })
+      expect(await first).toBe(true)
+    })
+    expect(inspect).toHaveBeenCalledOnce()
   })
 })

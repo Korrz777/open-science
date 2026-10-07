@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { ActionToast } from '@/components/ActionToast'
 import { ConfirmActionDialog } from '@/components/ui/confirm-action-dialog'
 import {
   DropdownMenu,
@@ -51,7 +52,6 @@ import { useNearViewport } from './previews/useNearViewport'
 import { useUnavailablePreviewProbe } from './previews/useUnavailablePreviewProbe'
 
 type ProjectFilesViewMode = 'grid' | 'list'
-
 // Keeps collection semantics visible in both the menu rows and the currently selected trigger.
 const ProjectFilesFilterIcon = ({
   kind,
@@ -68,9 +68,7 @@ const ProjectFilesFilterIcon = ({
   }
   return <Boxes className={className} strokeWidth={1.8} aria-hidden="true" />
 }
-
 const COLLAPSED_SESSION_OPTION_COUNT = 5
-
 // Caps the collapsed menu at five sessions while reserving the final slot for an active session
 // that lies later in the independently paginated option catalog.
 const getCollapsedSessionOptions = (
@@ -82,16 +80,13 @@ const getCollapsedSessionOptions = (
   if (!selectedOption || firstOptions.some((option) => option.id === selectedOptionId)) {
     return firstOptions
   }
-
   return [...firstOptions.slice(0, COLLAPSED_SESSION_OPTION_COUNT - 1), selectedOption]
 }
-
 const MINUTE_MS = 60 * 1000
 const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
 const MONTH_MS = 30 * DAY_MS
 const YEAR_MS = 365 * DAY_MS
-
 // Each bucket names its own English text: a natural-language key has to be a literal, so the unit
 // cannot be interpolated into one shared string. The plural rule then lives in the catalog, where a
 // language that inflects differently from English can express it.
@@ -102,19 +97,16 @@ const RELATIVE_FILE_TIME = [
   { key: '{{count}} hours ago', singular: '{{count}} hour ago', ms: HOUR_MS },
   { key: '{{count}} minutes ago', singular: '{{count}} minute ago', ms: MINUTE_MS }
 ] as const
-
 const formatRelativeFileTime = (
   timestamp: number | undefined,
   t: TFunction
 ): string | undefined => {
   if (typeof timestamp !== 'number' || !Number.isFinite(timestamp)) return undefined
-
   const elapsedMs = Math.max(0, Date.now() - timestamp)
   const unit =
     RELATIVE_FILE_TIME.find((item) => elapsedMs >= item.ms) ??
     RELATIVE_FILE_TIME[RELATIVE_FILE_TIME.length - 1]
   const value = Math.max(1, Math.floor(elapsedMs / unit.ms))
-
   return t(unit.key, { defaultValue_one: unit.singular, count: value })
 }
 
@@ -145,64 +137,72 @@ const FileActionButtons = ({
   const openLabel = t('Open {{name}} in split view beside the session', { name })
   const mentionLabel = t('Mention {{name}}', { name })
   const mention = useProjectFileMentionAction(file)
-
   return (
-    <div
-      className={cn(
-        'absolute z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100',
-        className
-      )}
-    >
-      <ManagedFileDownloadButton
-        source={source}
-        path={path}
-        projectId={projectId}
-        fileId={fileId}
-        suggestedName={name}
-        disabled={disabled}
-        iconSize="icon-sm"
-        className="cursor-pointer border-border bg-bg-000/95 shadow-sm"
-      />
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              className="cursor-pointer bg-bg-000/95 text-text-100 shadow-sm"
-              aria-label={mentionLabel}
-              disabled={disabled || !mention.available || mention.pending}
-              aria-busy={mention.pending}
-              onClick={() => void mention.mention()}
-            >
-              {mention.pending ? (
-                <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              ) : (
-                <AtSign aria-hidden="true" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{mentionLabel}</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              className="cursor-pointer bg-bg-000/95 text-text-100 shadow-sm"
-              aria-label={openLabel}
-              disabled={disabled}
-              onClick={onOpenInPanel}
-            >
-              <ArrowUpRight aria-hidden="true" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{openLabel}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
+    <>
+      <div
+        className={cn(
+          'absolute z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100 motion-reduce:transition-none [@media(hover:none)]:opacity-100',
+          className
+        )}
+      >
+        <ManagedFileDownloadButton
+          source={source}
+          path={path}
+          projectId={projectId}
+          fileId={fileId}
+          suggestedName={name}
+          disabled={disabled}
+          iconSize="icon-sm"
+          className="cursor-pointer border-border bg-bg-000/95 shadow-sm"
+        />
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                className="cursor-pointer bg-bg-000/95 text-text-100 shadow-sm"
+                aria-label={mentionLabel}
+                disabled={disabled || !mention.available || mention.pending}
+                aria-busy={mention.pending}
+                onClick={() => void mention.mention()}
+              >
+                {mention.pending ? (
+                  <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                ) : (
+                  <AtSign aria-hidden="true" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{mentionLabel}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                className="cursor-pointer bg-bg-000/95 text-text-100 shadow-sm"
+                aria-label={openLabel}
+                disabled={disabled}
+                onClick={onOpenInPanel}
+              >
+                <ArrowUpRight aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{openLabel}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      {mention.error ? (
+        <ActionToast
+          title={t('Could not resolve file version.')}
+          dismissLabel={t('Dismiss')}
+          onDismiss={mention.dismissError}
+        />
+      ) : null}
+    </>
   )
 }
 
