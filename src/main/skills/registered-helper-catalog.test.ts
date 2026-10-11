@@ -1,3 +1,4 @@
+import { validateSkillHelper } from './helper-validation'
 import { configureTestRuntimeMetadata } from '../../../test/runtime-metadata'
 import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -5,10 +6,8 @@ import { join } from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import {
-  RegisteredSkillHelperCatalog,
-  type RegisteredSkillPackage
-} from './registered-helper-catalog'
+import { RegisteredSkillHelperCatalog } from './registered-helper-catalog'
+import type { RegisteredSkillPackage } from '@aipoch/skills'
 import { NotebookHelperModuleHost } from '../notebook/helper-module-host'
 import { NotebookKernelExecutor } from '../notebook/kernel-executor'
 import { resolvePythonCommand } from '../notebook/python-command'
@@ -141,7 +140,7 @@ describe('RegisteredSkillHelperCatalog', () => {
         helperModules: injections,
         code: 'print(plotted_value())'
       })
-      expect(result).toMatchObject({ status: 'completed', stdout: '42\n' })
+      expect(result, JSON.stringify(result)).toMatchObject({ status: 'completed', stdout: '42\n' })
     } finally {
       await executor.shutdown()
     }
@@ -593,8 +592,10 @@ describe('RegisteredSkillHelperCatalog', () => {
     }
     await writeFile(join(root, 'open-science.json'), JSON.stringify(descriptor))
 
-    const { inspectSkillPackage } = await import('./skill-package-inspection')
-    await expect(inspectSkillPackage(root)).rejects.toThrow('callable export')
+    const { inspectSkillPackage } = await import('@aipoch/skills/sources')
+    await expect(
+      inspectSkillPackage(root, { validateHelper: validateSkillHelper })
+    ).rejects.toThrow('callable export')
   })
 })
 

@@ -252,21 +252,45 @@ describe('module test impact commands', () => {
   })
 
   it('expands User Skill repository changes through Settings and cross-surface consumers', () => {
+    const manifest = loadModuleImpactManifest()
+    const packageTests = manifest.modules.skill_package.testFiles.owner
+    expect(packageTests.length).toBeGreaterThan(0)
+    // Check local module plans too: CI's package exclusions must not hide stale host evidence.
+    for (const [id, module] of Object.entries(manifest.modules)) {
+      if (id === 'skill_package') continue
+      expect(
+        Object.values(module.testFiles)
+          .flat()
+          .filter((path) => path.startsWith('packages/skills/')),
+        `${id} must not register unchanged upstream Skill package units`
+      ).toEqual([])
+    }
+    for (const path of [
+      'src/main/skills/catalog.ts',
+      'src/main/skill-marketplace/service.ts',
+      'src/renderer/src/pages/settings/SkillEditor.tsx',
+      'src/main/compute/skill-provisioning.ts'
+    ]) {
+      const hostPlan = createAffectedTestPlan([{ path, status: 'modified' }], {
+        status: 'unavailable-manifest-only',
+        testFiles: []
+      })
+      expect(hostPlan.mode, path).toBe('selective')
+      expect(
+        hostPlan.testFiles.some((file) => file.startsWith('packages/skills/')),
+        path
+      ).toBe(false)
+    }
     const direct = createModuleTestPlan('user_skills_repository')
     expect(direct.testFiles).toEqual(
       expect.arrayContaining([
-        'src/main/skills/user-skill-catalog-observer.test.ts',
-        'src/main/skills/user-skill-compatibility-index.test.ts',
         'src/main/skills/user-skill-repository.architecture.test.ts',
-        'src/main/skills/user-skill-repository.atomic.test.ts',
-        'src/main/skills/user-skill-repository.test.ts',
         'src/main/skills/host-skills-service.test.ts',
         'src/main/skills/conversation-import.test.ts',
-        'src/main/skills/specialist-package-adapter.test.ts',
         'src/main/notebook/local-rpc-server.test.ts',
         'src/main/notebook/local-rpc-server.skill-import.test.ts',
         'src/main/notebook/local-rpc-server.skills.test.ts',
-        'src/main/settings/skill-catalog.test.ts',
+        'src/main/skills/catalog.test.ts',
         'src/main/settings/service.test.ts',
         'src/main/specialist/package/release-certification.test.ts',
         'src/main/specialist/package/service.test.ts',
@@ -277,33 +301,54 @@ describe('module test impact commands', () => {
     )
 
     for (const { path, status } of [
-      { path: 'src/main/skills/user-skill-catalog-observer.ts', status: 'modified' },
-      { path: 'src/main/skills/user-skill-compatibility-index.ts', status: 'added' },
+      { path: 'packages/skills/src/user-skill-catalog-observer.ts', status: 'modified' },
+      { path: 'packages/skills/src/user-skill-compatibility-index.ts', status: 'added' },
       { path: 'src/main/skills/user-skill-repository.ts', status: 'modified' },
-      { path: 'src/main/skills/user-skill-store.ts', status: 'modified' },
-      { path: 'src/main/skills/agent-home-skill-owner.ts', status: 'added' },
-      { path: 'src/main/skills/skill-bundle-import-owner.ts', status: 'modified' },
-      { path: 'src/main/skills/user-skill-import-contracts.ts', status: 'added' },
-      { path: 'src/main/skills/skill-mutation-owner.ts', status: 'modified' },
-      { path: 'src/main/skills/skill-package-transaction-owner.ts', status: 'modified' }
+      { path: 'packages/skills/src/user-skill-store.ts', status: 'modified' },
+      { path: 'packages/skills/src/agent-home-skill-owner.ts', status: 'added' },
+      { path: 'packages/skills/src/skill-bundle-import-owner.ts', status: 'modified' },
+      { path: 'packages/skills/src/user-skill-import-contracts.ts', status: 'added' },
+      { path: 'packages/skills/src/skill-mutation-owner.ts', status: 'modified' },
+      { path: 'packages/skills/src/skill-package-transaction-owner.ts', status: 'modified' }
     ] as const) {
       const affected = createAffectedTestPlan([{ path, status }], {
         status: 'current',
         testFiles: []
       })
+      const prefix = path.startsWith('packages/skills/') ? 'skill_package -> ' : ''
       expect([...affected.modules].sort()).toEqual([
+        ...(prefix ? ['settings_operations'] : []),
         'settings_service_facade',
+        ...(prefix ? ['skill_marketplace', 'skill_package'] : []),
         'user_skills_repository',
         'workspace_page',
         'workspace_runtime'
       ])
       expect(affected.reasonChains).toEqual(
         expect.arrayContaining([
-          'user_skills_repository -> settings_service_facade',
-          'user_skills_repository -> settings_service_facade -> workspace_runtime',
-          'user_skills_repository -> settings_service_facade -> workspace_runtime -> workspace_page'
+          `${prefix}user_skills_repository -> settings_service_facade`,
+          `${prefix}user_skills_repository -> settings_service_facade -> workspace_runtime`,
+          `${prefix}user_skills_repository -> settings_service_facade -> workspace_runtime -> workspace_page`
         ])
       )
+      expect(
+        affected.testFiles.filter((file) => file.startsWith('packages/skills/')).sort()
+      ).toEqual(prefix ? [...packageTests].sort() : [])
+      if (prefix) {
+        expect(affected.reasonChains).toEqual(
+          expect.arrayContaining([
+            'skill_package -> skill_marketplace',
+            'skill_package -> skill_marketplace -> settings_operations'
+          ])
+        )
+        expect(affected.testFiles).toEqual(
+          expect.arrayContaining([
+            'src/main/skill-marketplace/installation.test.ts',
+            'src/main/skill-marketplace/service.test.ts',
+            'src/main/settings/workflows.test.ts'
+          ])
+        )
+      }
       expect(affected.testFiles).toEqual(
         expect.arrayContaining([
           'packages/open-science/cli.test.ts',

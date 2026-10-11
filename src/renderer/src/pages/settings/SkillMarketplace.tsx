@@ -6,11 +6,13 @@ import { skillMarketplaceStableVersionPattern } from '../../../../shared/skill-m
 import type {
   SkillMarketplaceCatalog,
   SkillMarketplaceCatalogRequest,
-  SkillMarketplaceDetail,
   SkillMarketplaceInstallation,
   SkillMarketplaceInstallResult,
-  SkillMarketplaceUpdatePreview,
   SkillMarketplaceResult
+} from '../../../../shared/skill-marketplace'
+import type {
+  SkillMarketplaceUpdatePreview,
+  SkillMarketplaceDetail
 } from '../../../../shared/skill-marketplace'
 import { ErrorNotice } from '@/components/error-notice'
 import { useTranslation } from 'react-i18next'

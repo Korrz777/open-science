@@ -1,4 +1,31 @@
-import type { SkillSource } from './settings'
+import type { SpecialistPackageSkillDisposition } from '@aipoch/skills/document'
+
+export type SpecialistPackageSkillConflict = {
+  localId: string
+  installedVersion: string
+  installedContentHash: string
+  mainEnabled: boolean
+  specialists: ReadonlyArray<{ id: string; name: string }>
+}
+
+export type SpecialistPackageSkillPreview = {
+  id: string
+  version: string
+  versionRange?: string
+  disposition: SpecialistPackageSkillDisposition
+  files: readonly string[]
+  reason?: string
+  conflict?: SpecialistPackageSkillConflict
+}
+
+export type SpecialistPackageSkillPlan = SpecialistPackageSkillPreview & {
+  /** Target installation ID resolved from the portable package Skill name. */
+  localId?: string
+  contentHash: string
+  filesToInstall: ReadonlyArray<{ path: string; bytes: Uint8Array }>
+}
+
+import type { SkillSource } from '@aipoch/skills/document'
 
 export const SPECIALIST_PACKAGE_SCHEMA_VERSION = 1 as const
 export const DEFAULT_BUNDLED_SKILL_VERSION = '0.1.0' as const
@@ -112,40 +139,6 @@ export type SpecialistPackageCatalogSnapshot = {
   protectedSpecialistIds: readonly string[]
   protectedSpecialistNames?: readonly string[]
   specialists?: ReadonlyArray<{ id: string; name: string }>
-}
-
-export type SpecialistPackageSkillDisposition =
-  | 'install'
-  | 'reuse-builtin'
-  | 'reuse-owned'
-  | 'reuse-standalone'
-  | 'reuse-existing'
-  | 'conflict'
-  | 'replace-existing'
-
-export type SpecialistPackageSkillConflict = {
-  localId: string
-  installedVersion: string
-  installedContentHash: string
-  mainEnabled: boolean
-  specialists: ReadonlyArray<{ id: string; name: string }>
-}
-
-export type SpecialistPackageSkillPreview = {
-  id: string
-  version: string
-  versionRange?: string
-  disposition: SpecialistPackageSkillDisposition
-  files: readonly string[]
-  reason?: string
-  conflict?: SpecialistPackageSkillConflict
-}
-
-export type SpecialistPackageSkillPlan = SpecialistPackageSkillPreview & {
-  /** Target installation ID resolved from the portable package Skill name. */
-  localId?: string
-  contentHash: string
-  filesToInstall: ReadonlyArray<{ path: string; bytes: Uint8Array }>
 }
 
 export type SpecialistPackageSummary = {

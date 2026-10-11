@@ -36,8 +36,8 @@ import type { Logger } from '@aipoch/diagnostics/node'
 import { codexSubscriptionStorageDir } from '../agent-framework/codex'
 import type { SettingsServiceOptions } from './service'
 import { SettingsInstallCoordinator } from './settings-install-coordinator'
-import { SkillMarketplaceService } from '../skills/marketplace-service'
-import { SkillCatalogModule } from './skill-catalog'
+import { SkillMarketplaceService } from '../skill-marketplace/service'
+import { SkillCatalogModule } from '../skills/catalog'
 import { marketplaceCatalog } from '../../shared/__fixtures__/skill-marketplace'
 
 // Reversible fake safeStorage so provider keys can be encrypted/decrypted without an OS keychain.
@@ -66,12 +66,12 @@ const { SettingsRepository } = await import('./repository')
 const { getAppClaudeConfigDir } = await import('./provider-env')
 const { getClaudeSkillRuntimeRoot } = await import('./claude-runtime-provisioner')
 const { connectorSkillSourceDir } = await import('../connectors/provision')
-const { SkillRegistry } = await import('../skills/registry')
+const { SkillRegistry } = await import('@aipoch/skills')
 const { managedClaudeDir } = await import('./managed-claude')
 const { managedOpencodeDir } = await import('./managed-opencode')
-const { netFetch } = await import('../skills/net-fetch')
+const { netFetch } = await import('../network-fetch')
 const { UserSkillRepository } = await import('../skills/user-skill-repository')
-const { UserSkillSpecialistPackageAdapter } = await import('../skills/specialist-package-adapter')
+const { UserSkillSpecialistPackageAdapter } = await import('@aipoch/skills')
 const { opencodeConfigDir, opencodeTransportProviderId } =
   await import('../agent-framework/opencode')
 const { net: mockedNet } = (await import('electron')) as unknown as {

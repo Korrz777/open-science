@@ -5,8 +5,9 @@ import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { strFromU8, unzipSync } from 'fflate'
 
-import { buildSkillExportArchive, saveSkillExport, skillExportFileName } from './export'
-import { SKILL_IMPORT_LIMITS } from '../../shared/skill-import-limits'
+import { buildSkillExportArchive, saveSkillExport } from './export'
+import { skillExportFileName } from '@aipoch/skills/sources'
+import { SKILL_IMPORT_LIMITS } from '@aipoch/skills/document'
 
 const roots: string[] = []
 

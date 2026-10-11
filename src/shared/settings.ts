@@ -1,3 +1,15 @@
+import type {
+  SkillPackageFileInfo,
+  SkillReferenceInfo,
+  GitHubRepositorySearchView,
+  AgentHomeSkillRef,
+  SkillBundlePreviewResult,
+  SkillReplacementPreview,
+  SkillReference,
+  SkillActivationPolicy,
+  SkillSource
+} from '@aipoch/skills/document'
+
 // Shared model-settings & onboarding types crossing the main <-> renderer IPC boundary.
 //
 // The main process owns settings.json and all secret material. The renderer only ever receives the
@@ -1162,10 +1174,6 @@ export type EnvironmentCheckResult = {
   runtime: ClaudeDetectResult
 }
 
-// A bundled skill's source category: app-bundled, imported from GitHub, or user-authored.
-export type SkillSource = 'featured' | 'imported' | 'personal'
-export type SkillActivationPolicy = 'always-on' | 'user-controlled'
-
 // Stable machine codes for failed Settings writes. The renderer display layer translates by code,
 // so no English message text ever crosses the store boundary or gets string-compared to decide a
 // translation. Codes are single hyphenated tokens with no spaces: concurrent failures are joined
@@ -1241,18 +1249,6 @@ export type ResolvedSkillDocument = {
   body: string
 }
 
-// A reference file's name and byte size, without its content.
-export type SkillReferenceInfo = {
-  path: string
-  sizeBytes: number
-}
-
-// A regular file in the Skill package, addressed relative to the package root.
-export type SkillPackageFileInfo = {
-  path: string
-  sizeBytes: number
-}
-
 export type SetSkillEnabledRequest = {
   id: string
   enabled: boolean
@@ -1261,13 +1257,6 @@ export type SetSkillEnabledRequest = {
 export type SetSkillsEnabledRequest = {
   ids: string[]
   enabled: boolean
-}
-
-// A supporting file bundled under the skill's `references/` directory. `dataBase64` carries new file
-// content; when omitted (on edit), it means "keep the existing file with this path unchanged".
-export type SkillReference = {
-  path: string
-  dataBase64?: string
 }
 
 // Create a personal (user-authored) skill from the in-app editor. `name` is the immutable invocation
@@ -1327,18 +1316,6 @@ export type PreviewSkillZipRequest = {
   dataBase64: string
 }
 
-// Read-only SKILL.md content shown before import. Every source adapter returns this renderer-safe
-// shape: sourceLabel is a display path/URL (never an absolute host path), metadata contains parsed
-// frontmatter fields other than name/description, and files contains relative names only.
-export type SkillReplacementPreview = {
-  targetId: string
-  sourceLabel?: string
-  added: string[]
-  modified: string[]
-  removed: string[]
-  comparisonUnavailable?: boolean
-}
-
 export type SkillImportPreviewContent = {
   replacement?: SkillReplacementPreview
   name: string
@@ -1372,42 +1349,6 @@ export type ImportSkillZipBatchItemResult =
 export type ImportSkillZipBatchResult = {
   results: ImportSkillZipBatchItemResult[]
   skills: SkillView[]
-}
-
-// The parsed contents of a bundle: the skill's name/description, the files it contains, whether an
-// identical bundle was already imported (same content signature), and — when the name collides with
-// exactly one existing imported skill of different content — the id of that skill, offered as a
-// replace target.
-export type SkillBundlePreview = {
-  replacement?: SkillReplacementPreview
-  subPath: string
-  name: string
-  description: string
-  metadata: Record<string, string>
-  body: string
-  previewError?: string
-  files: string[]
-  alreadyImported: boolean
-  replaceableId?: string
-  // Present only for candidates discovered from a public GitHub repo. The approval dialog uses it
-  // to load the same lazy candidate preview as Settings; the main process still owns import URLs.
-  githubUrl?: string
-}
-
-// One skill the bundle contained but that couldn't be imported (too large, no SKILL.md, no name, an
-// unreadable nested archive, ...). `source` identifies it within the bundle (the nested archive name
-// or subPath); `reason` is a plain-English explanation shown to the user. Surfaced so a partial import
-// tells the user exactly what was left out instead of failing the whole bundle.
-export type SkippedSkill = {
-  source: string
-  reason: string
-}
-
-// Result of previewing a bundle: the importable skills, plus any that were skipped and why. A bundle
-// with a mix of good and bad skills yields previews for the good ones and a skipped entry per bad one.
-export type SkillBundlePreviewResult = {
-  previews: SkillBundlePreview[]
-  skipped: SkippedSkill[]
 }
 
 // A Skill package import requested by an agent tool. The main process owns the archive bytes and
@@ -1446,31 +1387,6 @@ export type ScanRepoRequest = {
   repo: string
 }
 
-// A known user-level source that may contain installed skills. The shared Agents directory is
-// available for every framework; Claude and Codex directories are available only while that
-// framework is active.
-export type AgentHomeSkillSource = 'agents' | 'claude' | 'codex'
-
-// One skill found in a user-level source. Main returns renderer-safe metadata only: the source id and
-// slug are sufficient to request an import, while the absolute host path remains in the main process.
-export type AgentHomeSkillView = {
-  source: AgentHomeSkillSource
-  // The directory name under the agent's skills/ dir. Used as the candidate slug and as the
-  // identifier on disk; not a renderer-visible name (the SKILL.md frontmatter supplies that).
-  slug: string
-  // Parsed from SKILL.md frontmatter; falls back to the slug when the name is absent or unparseable.
-  name: string
-  description: string
-  // True when either the same source, slug, and content are already represented by an imported-skill
-  // record, or a controlled legacy slug fallback claims this row, so the UI can disable its checkbox.
-  alreadyImported: boolean
-}
-
-export type AgentHomeSkillRef = {
-  source: AgentHomeSkillSource
-  slug: string
-}
-
 export type PreviewAgentHomeSkillRequest = AgentHomeSkillRef
 
 // Batch import selected user-level skills. Main re-derives every absolute path from the trusted
@@ -1481,16 +1397,7 @@ export type ImportAgentHomeSkillsRequest = {
 
 // One bad or concurrently removed source does not abort the rest of a checked batch.
 export type ImportAgentHomeSkillItemResult =
-  | (AgentHomeSkillRef & {
-      status: 'imported' | 'unchanged' | 'updated'
-      id: string
-      error?: undefined
-    })
-  | (Partial<AgentHomeSkillRef> & {
-      status?: undefined
-      id?: undefined
-      error: string
-    })
+  import('@aipoch/skills/document').AgentHomeSkillImportResult
 
 export type ImportAgentHomeSkillsResult = {
   results: ImportAgentHomeSkillItemResult[]
@@ -1505,17 +1412,6 @@ export type ScannedSkillView = {
   url: string
   alreadyImported: boolean
 }
-
-// Compact public-repository metadata returned when scanRepoSkills receives a keyword query.
-export type GitHubRepositorySearchView = {
-  fullName: string
-  description: string | null
-  url: string
-  stars: number
-}
-
-export const GITHUB_REPOSITORY_SEARCH_TOO_LONG_MESSAGE =
-  'GitHub search is limited to 256 characters. Shorten the keywords or paste an owner/repo reference.'
 
 // The existing scan seam also handles keyword discovery. Presence of `repositories` identifies a
 // search result, including the empty-results case; direct repo scans retain their original shape.

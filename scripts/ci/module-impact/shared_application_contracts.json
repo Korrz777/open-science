@@ -68,7 +68,6 @@
     "src/shared/pdf-table-copy.test.ts",
     "src/shared/pdf-table-copy.ts",
     "src/shared/pdf-text.ts",
-    "src/shared/personal-skill-document.ts",
     "src/shared/provider-base-url.ts",
     "src/shared/provider-reasoning-effort.test.ts",
     "src/shared/provider-reasoning-effort.ts",
@@ -96,11 +95,7 @@
     "src/shared/session-plan/contract.ts",
     "src/shared/settings.test.ts",
     "src/shared/settings.ts",
-    "src/shared/skill-frontmatter.ts",
-    "src/shared/skill-import-limits.ts",
     "src/shared/skill-import.ts",
-    "src/shared/skill-marketplace.ts",
-    "src/shared/skill-reference-name.ts",
     "src/shared/specialist-marketplace.ts",
     "src/shared/specialist-package.ts",
     "src/shared/specialist.test.ts",
@@ -180,7 +175,8 @@
     "src/shared/pdf-translation-models.ts",
     "src/shared/pdf-translation-models.test.ts",
     "src/shared/pdf-text.test.ts",
-    "src/shared/pdf-translation.test.ts"
+    "src/shared/pdf-translation.test.ts",
+    "src/shared/skill-marketplace.ts"
   ],
   "interfacePaths": [
     "src/shared/interface-scale.ts",
@@ -233,7 +229,6 @@
     "src/shared/pdf-structure.ts",
     "src/shared/pdf-table-copy.ts",
     "src/shared/pdf-text.ts",
-    "src/shared/personal-skill-document.ts",
     "src/shared/provider-base-url.ts",
     "src/shared/provider-reasoning-effort.ts",
     "src/shared/provider-registry.ts",
@@ -247,11 +242,7 @@
     "src/shared/search-text.ts",
     "src/shared/session-plan/contract.ts",
     "src/shared/settings.ts",
-    "src/shared/skill-frontmatter.ts",
-    "src/shared/skill-import-limits.ts",
     "src/shared/skill-import.ts",
-    "src/shared/skill-marketplace.ts",
-    "src/shared/skill-reference-name.ts",
     "src/shared/specialist-marketplace.ts",
     "src/shared/specialist-package.ts",
     "src/shared/specialist.ts",
@@ -272,7 +263,8 @@
     "src/shared/literature-smart-collections.ts",
     "src/shared/journal-attributes.ts",
     "src/shared/provider-text-generation-failure.ts",
-    "src/shared/pdf-translation-models.ts"
+    "src/shared/pdf-translation-models.ts",
+    "src/shared/skill-marketplace.ts"
   ],
   "consumerModules": [],
   "testFiles": {

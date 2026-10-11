@@ -7,7 +7,7 @@ import { strFromU8, strToU8, unzipSync } from 'fflate'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { SpecialistPackageCatalogSnapshot } from '../../../shared/specialist-package'
-import { UserSkillSpecialistPackageAdapter } from '../../skills/specialist-package-adapter'
+import { UserSkillSpecialistPackageAdapter } from '@aipoch/skills'
 import { SpecialistRepository } from '../repository'
 import { SpecialistService } from '../service'
 import {
@@ -329,7 +329,6 @@ describe('Specialist contribution release certification', () => {
           id: 'interrupted-skill',
           version: '1.0.0',
           disposition: 'install',
-          files: ['SKILL.md'],
           contentHash: 'a'.repeat(64),
           filesToInstall: [
             {
