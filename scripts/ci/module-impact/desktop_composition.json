@@ -260,7 +260,8 @@
     "scripts/electron-builder-config.test.ts",
     "scripts/electron-fixture-teardown.test.ts",
     "scripts/electron-vite-config.test.ts",
-    "src/main/composition/notebook-approvals.ts"
+    "src/main/composition/notebook-approvals.ts",
+    "scripts/electron-session-revision-retry.test.ts"
   ],
   "interfacePaths": [
     "src/main/app-lifecycle.ts",
@@ -450,7 +451,8 @@
       "scripts/stage-node-runtime.test.ts",
       "src/main/desktop-runtime-launcher.test.ts",
       "src/main/desktop-runtime-launcher.integration.test.ts",
-      "src/main/desktop-runtime-lifecycle.test.ts"
+      "src/main/desktop-runtime-lifecycle.test.ts",
+      "scripts/electron-session-revision-retry.test.ts"
     ],
     "contract": [
       "src/preload/index.test.ts",
@@ -1315,21 +1317,7 @@
       "src/main/literature/pdf-translation/checkpoints.test.ts",
       "src/main/settings/provider-text-generation.test.ts",
       "src/main/literature/pdf-translation/usage.test.ts",
-      "src/main/literature/pdf-translation/link-labels.test.ts",
-      "src/main/literature/pdf-translation/scientific-scripts.test.ts",
-      "src/main/literature/pdf-translation/cjk-wrap.test.ts",
-      "src/main/literature/pdf-translation/discretionary-hyphens.test.ts",
-      "src/main/literature/pdf-translation/form-graphics.test.ts",
-      "src/main/literature/pdf-translation/native-url-rows.test.ts",
-      "src/main/literature/pdf-translation/actual-text.test.ts",
       "src/main/literature/pdf-translation/incremental.test.ts",
-      "src/main/literature/pdf-translation/inline-citation-spacing.test.ts",
-      "src/main/literature/pdf-translation/legacy-math-fonts.test.ts",
-      "src/main/literature/pdf-translation/native-formatting.test.ts",
-      "src/main/literature/pdf-translation/native-latin-accents.test.ts",
-      "src/main/literature/pdf-translation/native-positive-powers.test.ts",
-      "src/main/literature/pdf-translation/native-registration-marks.test.ts",
-      "src/main/literature/pdf-translation/native-year-suffixes.test.ts",
       "scripts/pdf-translation-corpus.test.ts",
       "src/main/literature/pdf-translation/api-target.test.ts",
       "src/main/literature/pdf-translation/diagnostics.test.ts",
@@ -1337,14 +1325,6 @@
       "src/main/literature/pdf-translation/local.test.ts",
       "src/main/local-models/ipc.test.ts",
       "src/main/literature/pdf-translation/pdf-cache.test.ts",
-      "src/main/literature/pdf-translation/decoration-roundtrip.test.ts",
-      "src/main/literature/pdf-translation/float-footnote-roundtrip.test.ts",
-      "src/main/literature/pdf-translation/linked-prose-roundtrip.test.ts",
-      "src/main/literature/pdf-translation/parameter-prose-roundtrip.test.ts",
-      "src/main/literature/pdf-translation/spaced-script-roundtrip.test.ts",
-      "src/main/literature/pdf-translation/structural-roundtrip.test.ts",
-      "src/main/literature/pdf-translation/styled-float-roundtrip.test.ts",
-      "src/main/literature/pdf-translation/terminal-link-roundtrip.test.ts",
       "src/main/notebook/code-risk-admission.test.ts",
       "src/main/notebook/code-risk-analysis.test.ts",
       "src/main/settings/system-proxy.test.ts",
@@ -1405,7 +1385,6 @@
       "src/main/settings/file-commands.test.ts",
       "src/main/office-preview/application-commands.test.ts",
       "src/main/reviewer/paged-preview-host.test.ts",
-      "src/main/literature/pdf-translation/native-reading-order.test.ts",
       "src/main/session-plan/session-plan-turn-outcome.test.ts",
       "src/main/notebook/runtime-repair.windows.integration.test.ts",
       "src/main/notebook/python-command.probe.test.ts",
@@ -1429,7 +1408,8 @@
       "src/main/session-diagnostics/detail.test.ts",
       "src/main/session-diagnostics/environment.test.ts",
       "src/main/session-diagnostics/notebook.test.ts",
-      "src/main/session-diagnostics/projection.test.ts"
+      "src/main/session-diagnostics/projection.test.ts",
+      "src/main/literature/pdf-structure/engine-adapter.test.ts"
     ]
   },
   "capabilityOverlays": ["e2e_regressions", "e2e_delegation", "windows_sensitive"],

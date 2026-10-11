@@ -9,8 +9,12 @@ import {
   usePdfTranslationDocument,
   type PdfTranslationArtifact
 } from './use-pdf-translation-document'
-import { createPdfTranslationSource, type PdfTranslationResults } from './pdf-translation'
-import { extractPdfTranslationSource } from './pdf-translation-extraction'
+import {
+  createPdfTranslationSource,
+  type PdfTranslationResults,
+  extractPdfTranslationSource
+} from '@aipoch/pdf-translation/reader'
+
 import {
   PDFDocument,
   StandardFonts,
@@ -19,10 +23,9 @@ import {
   concatTransformationMatrix,
   drawObject
 } from 'pdf-lib'
+import { PdfGenerationError, type PdfTranslationPdfResult } from '@aipoch/pdf-translation/contracts'
 import {
-  PdfGenerationError,
   type PdfTranslationPdfRequest,
-  type PdfTranslationPdfResult,
   type PdfTranslationRecordLayoutRequest
 } from '../../../../../../shared/pdf-translation'
 const { getDocument, operators } = vi.hoisted(() => ({ getDocument: vi.fn(), operators: {} }))

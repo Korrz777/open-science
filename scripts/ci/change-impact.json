@@ -600,7 +600,10 @@
         "src/renderer/src/pages/workspace/previews/renderers/*pdf-translation*.test.ts",
         "src/renderer/src/pages/workspace/previews/renderers/*pdf-translation*.test.tsx",
         "src/shared/pdf-translation*.test.ts",
-        "test/pdf-translation-native-verification.test.ts"
+        "test/pdf-translation-native-verification.test.ts",
+        "packages/pdf-translation/test/*.test.ts",
+        "packages/pdf-translation/test/reader/*.test.ts",
+        "scripts/pdf-package-fixtures.test.ts"
       ]
     },
     {
@@ -614,6 +617,10 @@
     {
       "paths": ["test/fixtures/shadcn-patch-history.json"],
       "tests": ["scripts/dependency-patches.test.ts"]
+    },
+    {
+      "paths": ["test/fixtures/pdf-figure-selections/*.json"],
+      "tests": ["src/renderer/src/pages/workspace/previews/renderers/pdf-figure-selections.test.ts"]
     }
   ]
 }

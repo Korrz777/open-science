@@ -16,6 +16,14 @@
     {
       "root": "packages/diagnostics",
       "dependencies": []
+    },
+    {
+      "root": "packages/pdf-structure",
+      "dependencies": []
+    },
+    {
+      "root": "packages/pdf-translation",
+      "dependencies": ["packages/pdf-structure"]
     }
   ]
 }

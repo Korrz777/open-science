@@ -2,19 +2,14 @@ import type { PdfTranslationCheckpoint } from '../../../../../../shared/pdf-tran
 import {
   getPdfTranslationLayoutSnapshot,
   rememberPdfTranslationExtraction,
-  restorePdfTranslationExtraction
-} from './pdf-translation-snapshot'
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { PDFDocumentProxy } from 'pdfjs-dist'
-import {
+  restorePdfTranslationExtraction,
   extractPdfTranslationSource,
-  type PdfTranslationExtraction
-} from './pdf-translation-extraction'
-
-import {
+  type PdfTranslationExtraction,
   applyCachedPdfTableSources,
   type PdfTranslationSourceIdentity
-} from './pdf-translation-table-source'
+} from '@aipoch/pdf-translation/reader'
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 
 export type PdfPreparationState =
   | { status: 'idle' | 'cancelled' | 'error' }
@@ -110,10 +105,11 @@ export function usePdfTranslationPreparation(
             ? await applyCachedPdfTableSources({
                 extraction,
                 document,
-                attachmentVersionId,
+                sourceId: attachmentVersionId,
                 sourceIdentity,
                 signal: controller.signal,
-                readCached: (request) => window.api.pdfStructure.readCached(request)
+                readCached: ({ sourceId, page }) =>
+                  window.api.pdfStructure.readCached({ attachmentVersionId: sourceId, page })
               })
             : extraction
         controller.signal.throwIfAborted()

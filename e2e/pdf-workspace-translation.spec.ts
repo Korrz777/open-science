@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test'
 import { PDFDocument, StandardFonts } from 'pdf-lib'
 import type { Page } from 'playwright'
-import type { PdfDocumentSource } from '../src/shared/pdf-bookmarks'
+import type { PdfDocumentSource } from '../src/shared/pdf-document-source'
 import { test } from './fixtures/electron-app'
 import { createProject, sendPrompt } from './certification/helpers'
 
@@ -79,6 +79,7 @@ for (const source of ['upload', 'artifact'] as const) {
         .getByRole('group', { name: 'Translation progress' })
         .getByRole('button', { name: '2 Translated', exact: true })
     ).toBeVisible({ timeout: 60_000 })
+    await expect(panel.getByRole('button', { name: '0 Failed', exact: true })).toBeVisible()
     await expect(
       panel.getByRole('button', { name: 'View translated PDF', exact: true })
     ).toBeEnabled({ timeout: 60_000 })

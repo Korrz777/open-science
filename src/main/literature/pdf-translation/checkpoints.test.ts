@@ -18,11 +18,11 @@ import { flushLogs, initLogger } from '@aipoch/diagnostics/node'
 import {
   nextPdfTranslationSourceIndex,
   pdfTranslationSourceIndices
-} from '../../../shared/pdf-translation-recovery'
+} from '@aipoch/pdf-translation/text'
+import { type PdfTranslationRunRequest } from '@aipoch/pdf-translation/contracts'
 import {
   pdfTranslationCheckpointSchema,
-  type PdfTranslationCheckpoint,
-  type PdfTranslationRunRequest
+  type PdfTranslationCheckpoint
 } from '../../../shared/pdf-translation'
 
 let root: string
@@ -1239,7 +1239,7 @@ it('saves concurrent out-of-order paragraphs with sequential CAS writes and rest
 
 async function setupWorkspace(kind: 'upload-version' | 'artifact-version'): Promise<{
   store: PdfTranslationCheckpoints
-  source: import('../../../shared/pdf-bookmarks').PdfDocumentSource
+  source: import('../../../shared/pdf-document-source').PdfDocumentSource
 }> {
   await setup()
   await client.project.createMany({
@@ -1968,7 +1968,7 @@ it('logs only failed layout diagnoses, even after more than twenty successful re
 })
 
 const layoutSnapshot =
-  (): import('../../../shared/pdf-translation-snapshot').PdfTranslationLayoutSnapshot => ({
+  (): import('@aipoch/pdf-translation/contracts').PdfTranslationLayoutSnapshot => ({
     version: 1,
     parserVersion: 'test-parser-v1',
     fingerprint: input.fingerprint,

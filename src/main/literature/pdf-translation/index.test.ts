@@ -21,6 +21,8 @@ const input = {
   sources: ['ATP increased.']
 }
 const setup = (checkpoints?: PdfTranslationCheckpoints) => {
+  if (checkpoints && !checkpoints.contentKey)
+    checkpoints.contentKey = async (source) => JSON.stringify(source)
   const registry = new ApplicationCallerLeaseRegistry()
   const caller = registry.acquire({ leaseId: 'reader', surface: 'electron' })
   const target: ExplicitAgentBackendTarget = {
@@ -133,6 +135,7 @@ describe('PDF translation owner', () => {
         version: 1,
         key: 'checkpoint',
         revision: 0,
+        attachmentVersionId: 'version',
         sources: input.sources,
         translations: translatedSourceIndices.map(() => 'ATP 增加。'),
         translatedSourceIndices,
@@ -761,9 +764,38 @@ it.each([
   const h = setup()
   await expect(
     h.owner.begin({ ...input, agentModel } as Parameters<typeof h.owner.begin>[0], h.caller.lease)
-  ).rejects.toThrow()
+  ).rejects.toThrow('Invalid PDF translation source.')
   expect(h.captureTarget).not.toHaveBeenCalled()
 })
+
+it.each(['claude-code', 'opencode', 'codex', 'codebuddy'] as const)(
+  'retains host admission and translation through %s',
+  async (frameworkId) => {
+    const h = setup()
+    const target = { ...h.target, frameworkId }
+    h.captureTarget.mockResolvedValue(target)
+    const agentModel = {
+      frameworkId,
+      providerId: 'provider',
+      modelId: 'model',
+      reasoningEffort: 'default' as const
+    }
+    try {
+      const admitted = await h.owner.begin({ ...input, agentModel }, h.caller.lease)
+      expect(h.captureTarget).toHaveBeenCalledWith(agentModel)
+      await expect(
+        h.owner.translate(
+          { operationId: admitted.operationId, sourceIndex: 0, source: input.sources[0] },
+          h.caller.lease
+        )
+      ).resolves.toBe('ATP 增加。')
+      expect(h.runner.run).toHaveBeenCalledWith(expect.objectContaining({ target }))
+    } finally {
+      await h.owner.shutdown()
+      h.registry.dispose()
+    }
+  }
+)
 
 it('returns only public model identity and reports a deadline distinctly from cancellation', async () => {
   const h = setup()
@@ -1723,6 +1755,7 @@ describe('bounded short-unit translation prefetch', () => {
       version: 1,
       key: 'checkpoint',
       revision: 0,
+      attachmentVersionId: 'version',
       sources,
       translatedSourceIndices: [],
       translations: []
@@ -1772,6 +1805,7 @@ describe('bounded short-unit translation prefetch', () => {
       version: 1,
       key: 'checkpoint',
       revision: 0,
+      attachmentVersionId: 'version',
       sources,
       translatedSourceIndices: [],
       translations: []
@@ -2261,7 +2295,7 @@ describe('application-owned local translation', () => {
     const target = {
       modelId: 'qwen3-0.6b-q8',
       revision: 'qwen3-q8-runtime-1'
-    } as import('./local').PdfTranslationLocalTarget
+    } as import('@aipoch/pdf-translation').PdfTranslationLocalTarget
     const localRunner = {
       acquireTarget: vi.fn(async () => target),
       run: vi.fn(async (request: { signal: AbortSignal; prompt: string; systemPrompt: string }) => {
@@ -2377,7 +2411,11 @@ describe('application-owned local translation', () => {
 
 it('fences edition selection against active readers and new admissions for the same content', async () => {
   let finishSelection!: (value: PdfTranslationCheckpoint) => void
-  const checkpoint = { key: 'edition-key', revision: 1 } as PdfTranslationCheckpoint
+  const checkpoint = {
+    key: 'edition-key',
+    revision: 1,
+    attachmentVersionId: 'version-a'
+  } as PdfTranslationCheckpoint
   const storage = {
     contentKey: vi.fn(async () => 'verified-content:42'),
     list: vi.fn(async () => []),
@@ -2462,7 +2500,11 @@ it.each(['verification', 'selection'] as const)(
         await release.promise
         signal.throwIfAborted()
         committed = true
-        return { key: 'edition-key', revision: 1 } as PdfTranslationCheckpoint
+        return {
+          key: 'edition-key',
+          revision: 1,
+          attachmentVersionId: 'version-a'
+        } as PdfTranslationCheckpoint
       })
     }
     const h = setup(storage as unknown as PdfTranslationCheckpoints)

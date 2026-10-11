@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
-import { dirname, isAbsolute, join, relative } from 'node:path'
+import { dirname, isAbsolute, relative } from 'node:path'
 import { expect } from '@playwright/test'
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { PdfStructureCache } from '../src/main/literature/pdf-structure/cache'
 import { createPdfStructureEngine } from '../src/main/literature/pdf-structure/engine'
 import { literatureItemInputSchema } from '../src/shared/literature'
-import type { PdfStructureResult } from '../src/shared/pdf-structure'
+import type { PdfStructureResult } from '@aipoch/pdf-structure/result'
 import { test } from './fixtures/electron-app'
 
 function textPdf(pageCount = 2): Buffer {
@@ -71,9 +71,7 @@ test('prepares a Library PDF through real IPC and cached table provenance', asyn
   const { profile } = await app.captureBrandState()
   const fixtureRelative = relative(dirname(profile), dataRoot)
   expect(isAbsolute(fixtureRelative) || fixtureRelative.startsWith('..')).toBe(false)
-  const recipe = await createPdfStructureEngine(
-    join(process.cwd(), 'resources/pdf-structure')
-  ).describe()
+  const recipe = await createPdfStructureEngine().describe()
   const loading = getDocument({ data: new Uint8Array(bytes), useSystemFonts: true })
   let result: PdfStructureResult
   try {

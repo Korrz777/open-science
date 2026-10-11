@@ -594,7 +594,8 @@
       "src/main/notebook/auto-mode-budget.integration.test.ts",
       "src/main/connectors/custom-mcp-config.test.ts",
       "src/main/connectors/mcp-host-dependencies.test.ts",
-      "src/main/session-diagnostics/schema-compatibility.integration.test.ts"
+      "src/main/session-diagnostics/schema-compatibility.integration.test.ts",
+      "src/main/literature/pdf-structure/engine-adapter.test.ts"
     ]
   },
   "capabilityOverlays": ["notebook_network_sandbox", "windows_sensitive"],
