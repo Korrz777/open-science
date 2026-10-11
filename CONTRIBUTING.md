@@ -70,6 +70,15 @@ for native build prerequisites, secure-storage requirements and host capability 
 npm run dev
 ```
 
+Development reuses unchanged package builds and the verified Node runtime. Package edits rebuild
+automatically; renderer package edits reload the page and may reset transient state. React keeps HMR.
+
+For backend/main/preload changes, wait for a successful build, quit the app normally, stop the dev
+command, then run `npm run dev` again. Web/headless development has no live reload.
+
+For a new local package, follow an existing `tsconfig.dev.json`, reference its local dependencies,
+and add it to `tsconfig.packages.json`. Use `npm run build:packages:dev` to build packages alone.
+
 Native credential helpers build incrementally in development. On macOS, keep
 `packages/credential-identity-probe-native/build/` between launches: a clean rebuild can change
 the helper's identity and require Keychain authorization again.
