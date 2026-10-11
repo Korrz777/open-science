@@ -1,3 +1,4 @@
+import { createNotebookDependencyAnalyzer } from './dependency-analysis-adapter'
 import { projectConnectorsFromStored } from '../connectors/read-model'
 import { configureTestRuntimeMetadata } from '../../../test/runtime-metadata'
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
@@ -25,7 +26,7 @@ import { createSpecialistService } from '../specialist/service'
 import { createDeterministicDelegateExecution } from '../delegation/deterministic-execution'
 import { createInMemoryDelegatedWorkRecords } from '../delegation/durable-delegated-work'
 import { createTestDurableDelegatedWork as createDurableDelegatedWork } from '../delegation/durable-delegated-work-test-fixture'
-import { NotebookDependencyAnalyzer } from './dependency-analysis'
+
 import { startWorkingFileObservation } from './working-file-observer'
 import { sealArtifactProvenanceGraph } from '../artifacts/artifact-provenance-graph'
 import type { NotebookRunRecord } from '../../shared/notebook'
@@ -99,7 +100,7 @@ it.skipIf(!process.env.OPEN_SCIENCE_TEST_PYTHON)(
     const { child, send } = startLoop({ OPEN_SCIENCE_HANDOFF_DIR: handoff })
     const runs: NotebookRunRecord[] = []
     const activities: Parameters<typeof sealArtifactProvenanceGraph>[0]['notebookActivities'] = []
-    const analyzer = new NotebookDependencyAnalyzer({
+    const analyzer = createNotebookDependencyAnalyzer({
       storageRoot,
       repository: { readSessionRuns: async () => runs }
     })

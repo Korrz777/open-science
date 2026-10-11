@@ -1,3 +1,5 @@
+import type { NotebookDependencyAnalyzer } from '@aipoch/notebook-analysis'
+import { createNotebookDependencyAnalyzer } from './dependency-analysis-adapter'
 import { desktopFileInteraction } from '../desktop-interaction'
 import { runtimeMetadata, runtimeMetadataIfConfigured } from '../runtime-metadata'
 import type { ReplayRunIndex } from '../../shared/replay'
@@ -63,8 +65,9 @@ import {
   analyzeNotebookCodeRisk,
   analyzePowerShellCodeRisk,
   type NotebookCodeRisk
-} from './code-risk-analysis'
-import type { NotebookSourceFileAccessContext } from './dependency-analysis-types'
+} from '@aipoch/notebook-code-risk'
+import { parsePowerShellSearchCommands } from './powershell-search-parser'
+import type { NotebookSourceFileAccessContext } from '@aipoch/notebook-analysis/contracts'
 import {
   NotebookEnvironmentManagementOwner,
   type NotebookEnvironmentManager
@@ -156,7 +159,7 @@ import {
   type NotebookExecutorLifecycleCallbacks,
   type NotebookSessionLifecycleCallbacks
 } from './session-lifecycle'
-import { NotebookDependencyAnalyzer } from './dependency-analysis'
+
 import {
   assertNotebookCodeAppendWithinLimit,
   assertNotebookCodeWithinLimit
@@ -683,12 +686,14 @@ class NotebookRuntimeService {
         script: previous.script,
         incomplete: previous.status !== 'completed'
       }))
+    const shellRuntime = run.shellRuntime
     const risks: NotebookCodeRisk[] =
-      run.shellRuntime?.kind === 'powershell'
+      shellRuntime?.kind === 'powershell'
         ? await analyzePowerShellCodeRisk(
             run.script,
+            (source, signal) =>
+              parsePowerShellSearchCommands(source, signal, shellRuntime.version, true),
             signal,
-            run.shellRuntime.version,
             run.cwdBefore
           )
         : await analyzeNotebookCodeRisk(
@@ -840,7 +845,7 @@ class NotebookRuntimeService {
     })
     this.dependencyAnalyzer =
       options.dependencyAnalyzer ??
-      new NotebookDependencyAnalyzer({
+      createNotebookDependencyAnalyzer({
         storageRoot: options.dataRoot,
         repository: this.repository,
         resolveInterpreter: (run) =>

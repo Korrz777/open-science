@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
@@ -989,4 +989,153 @@ it.each([
     testFiles: []
   })
   expect(plan.mode).toBe('full')
+})
+
+describe('Notebook package module boundaries', () => {
+  const manifest = loadModuleImpactManifest()
+  const packageModules = [
+    'notebook_syntax',
+    'notebook_code_risk',
+    'notebook_analysis',
+    'notebook_analysis_engine'
+  ]
+  const packageRoots = [
+    'packages/notebook-syntax/',
+    'packages/notebook-code-risk/',
+    'packages/notebook-analysis/'
+  ]
+  const packageTests = (tests: string[]): string[] =>
+    tests.filter((path) => packageRoots.some((root) => path.startsWith(root)))
+  const graph = { status: 'unavailable-manifest-only', testFiles: [] }
+
+  it('never registers upstream Notebook unit tests as downstream host evidence', () => {
+    for (const [id, module] of Object.entries(manifest.modules)) {
+      if (packageModules.includes(id)) continue
+      expect(packageTests(Object.values(module.testFiles).flat()), id).toEqual([])
+      expect(
+        module.consumerModules.filter((consumer) => packageModules.includes(consumer)),
+        id
+      ).toEqual([])
+      if (!module.fullTestReason)
+        expect(packageTests(createModuleTestPlan(id, manifest).testFiles), id).toEqual([])
+    }
+  })
+
+  it('owns pure path and package-projection regressions inside analysis', () => {
+    const units = [
+      'input-path-analysis.test.ts',
+      'input-resource-analysis.test.ts',
+      'dependency-projection.r-packages.test.ts',
+      'dependency-analysis.chord.native.test.ts',
+      'dependency-analysis.circlize.native.test.ts',
+      'dependency-analysis.filesystem-diagnostics.native.test.ts',
+      'dependency-analysis.iteration-snapshots.native.test.ts',
+      'dependency-analysis.structured-results.native.test.ts',
+      'dependency-analysis.r-directory.native.test.ts',
+      'dependency-analysis.r-pipelines.native.test.ts'
+    ].map((name) => `packages/notebook-analysis/src/${name}`)
+    expect(manifest.modules.notebook_analysis_engine.testFiles.owner).toEqual(
+      expect.arrayContaining(units)
+    )
+    for (const module of Object.values(manifest.modules)) {
+      expect(
+        Object.values(module.testFiles)
+          .flat()
+          .filter((path) =>
+            units.some(
+              (unit) =>
+                path === unit.replace('packages/notebook-analysis/src/', 'src/main/notebook/')
+            )
+          )
+      ).toEqual([])
+    }
+    for (const path of [
+      'src/main/notebook/runtime-service.ts',
+      'src/main/notebook/dependency-analysis-adapter.ts',
+      'src/main/notebook/scientific-output-analysis.ts'
+    ]) {
+      const plan = createAffectedTestPlan([{ path, status: 'modified' }], graph, manifest)
+      expect(plan.mode).toBe('selective')
+      expect(packageTests(plan.testFiles)).toEqual([])
+      expect(plan.testFiles).toContain('src/main/notebook/code-risk-admission.test.ts')
+      expect(plan.testFiles).toContain(
+        'src/main/notebook/working-file-observer.write-scope.integration.test.ts'
+      )
+    }
+  })
+
+  it.each([
+    ['src/main/notebook/runtime-service.ts', 'src/main/notebook/runtime-service.test.ts'],
+    [
+      'src/main/notebook/dependency-analysis-adapter.ts',
+      'src/main/notebook/dependency-analysis-adapter.test.ts'
+    ],
+    [
+      'src/main/notebook/working-file-observer.ts',
+      'src/main/notebook/working-file-observer.test.ts'
+    ],
+    ['src/main/storage/content-repository.ts', 'src/main/storage/content-repository.test.ts']
+  ])('keeps host integrations without upstream package units for %s', (path, integration) => {
+    const plan = createAffectedTestPlan([{ path, status: 'modified' }], graph, manifest)
+    expect(plan.mode).toBe('selective')
+    expect(plan.testFiles).toContain(integration)
+    expect(packageTests(plan.testFiles)).toEqual([])
+  })
+
+  it.each([
+    ['notebook_code_risk', 'packages/notebook-code-risk/src/index.ts', ['notebook_code_risk']],
+    [
+      'notebook_analysis_engine',
+      'packages/notebook-analysis/src/dependency-analysis.ts',
+      ['notebook_analysis_engine']
+    ],
+    [
+      'notebook_syntax',
+      'packages/notebook-syntax/src/index.ts',
+      ['notebook_syntax', 'notebook_code_risk', 'notebook_analysis_engine']
+    ]
+  ])(
+    'selects only downstream package suites and host integrations for %s',
+    (id, path, selected) => {
+      const plan = createAffectedTestPlan([{ path, status: 'modified' }], graph, manifest)
+      expect(plan.mode).toBe('selective')
+      for (const candidate of packageModules) {
+        const owned = manifest.modules[candidate].testFiles.owner
+        if (candidate !== 'notebook_analysis') expect(owned.length).toBeGreaterThan(0)
+        if (selected.includes(candidate))
+          expect(plan.testFiles).toEqual(expect.arrayContaining(owned))
+        else
+          expect(
+            plan.testFiles.filter((test) => owned.includes(test)),
+            `${id} -> ${candidate}`
+          ).toEqual([])
+      }
+      expect(plan.testFiles).toContain('src/main/notebook/runtime-service.test.ts')
+      expect(plan.testFiles).toContain('src/main/notebook/code-risk-admission.test.ts')
+    }
+  )
+})
+
+it('separates analysis implementation consumers from broad shared contract consumers', () => {
+  const manifest = loadModuleImpactManifest()
+  const graph = { status: 'unavailable-manifest-only', testFiles: [] }
+  const implementation = createAffectedTestPlan(
+    [{ path: 'packages/notebook-analysis/src/dependency-analysis-python.ts', status: 'modified' }],
+    graph,
+    manifest
+  )
+  const contract = createAffectedTestPlan(
+    [{ path: 'packages/notebook-analysis/src/contracts.ts', status: 'modified' }],
+    graph,
+    manifest
+  )
+  expect(implementation.modules).toContain('notebook_analysis_engine')
+  expect(implementation.modules).not.toContain('notebook_analysis')
+  expect(implementation.modules).not.toContain('session_persistence')
+  expect(contract.modules).toEqual(
+    expect.arrayContaining(['notebook_analysis', 'notebook_analysis_engine', 'session_persistence'])
+  )
+  expect(contract.testFiles).toEqual(expect.arrayContaining(implementation.testFiles))
+  expect(implementation.testFiles).toContain('src/main/notebook/analysis-file-evidence.test.ts')
+  expect(implementation.testFiles).toContain('src/main/notebook/serialized-file-provenance.test.ts')
 })

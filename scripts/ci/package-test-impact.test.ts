@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createPackageTestPlan,
   packageTestExcludePatterns,
+  notebookPackageVerificationPlan,
   packageTestPlanFromRevisions,
   validatePackageTestRegistry
 } from './package-test-impact.mjs'
@@ -292,4 +293,71 @@ it.each([
   expect(plan.excluded).toContain('packages/connector-builtins')
   expect(plan.excluded).toContain('packages/connector-mcp-client')
   if (selected.length === 0) expect(plan.excluded).toContain('packages/diagnostics')
+})
+
+it('keeps Notebook package tests directional while retaining shared syntax consumers', () => {
+  const actual = JSON.parse(readFileSync('scripts/ci/package-test-boundaries.json', 'utf8'))
+  const syntax = 'packages/notebook-syntax'
+  const risk = 'packages/notebook-code-risk'
+  const analysis = 'packages/notebook-analysis'
+  expect(createPackageTestPlan(['src/main/notebook/runtime-service.ts'], actual).selected).toEqual(
+    []
+  )
+  expect(
+    createPackageTestPlan([`${analysis}/src/dependency-analysis.ts`], actual).selected
+  ).toEqual([analysis])
+  expect(createPackageTestPlan([`${risk}/src/index.ts`], actual).selected).toEqual([risk])
+  expect(
+    createPackageTestPlan([`${syntax}/assets/tree-sitter-python.wasm`], actual).selected
+  ).toEqual([syntax, risk, analysis])
+})
+
+it.each([
+  [[], [], []],
+  [
+    ['packages/notebook-code-risk'],
+    ['notebook-syntax', 'notebook-code-risk'],
+    ['notebook-code-risk']
+  ],
+  [['packages/notebook-analysis'], ['notebook-syntax', 'notebook-analysis'], ['notebook-analysis']],
+  [
+    ['packages/notebook-syntax', 'packages/notebook-code-risk', 'packages/notebook-analysis'],
+    ['notebook-syntax', 'notebook-code-risk', 'notebook-analysis'],
+    ['notebook-syntax', 'notebook-code-risk', 'notebook-analysis']
+  ],
+  [['packages/diagnostics'], [], []],
+  [
+    undefined,
+    ['notebook-syntax', 'notebook-code-risk', 'notebook-analysis'],
+    ['notebook-syntax', 'notebook-code-risk', 'notebook-analysis']
+  ],
+  [
+    ['packages'],
+    ['notebook-syntax', 'notebook-code-risk', 'notebook-analysis'],
+    ['notebook-syntax', 'notebook-code-risk', 'notebook-analysis']
+  ]
+])('verifies only selected packages with build-only prerequisites: %j', (roots, builds, tests) => {
+  expect(notebookPackageVerificationPlan(roots)).toEqual({ builds, tests })
+})
+
+it('verifies new packages absent from an older trusted registry instead of silently skipping bootstrap', () => {
+  expect(
+    notebookPackageVerificationPlan(['packages/diagnostics'], ['packages/connector-core']).tests
+  ).toEqual(['notebook-syntax', 'notebook-code-risk', 'notebook-analysis'])
+  expect(
+    notebookPackageVerificationPlan(
+      [],
+      ['packages/notebook-syntax', 'packages/notebook-code-risk', 'packages/notebook-analysis']
+    )
+  ).toEqual({ builds: [], tests: [] })
+  expect(
+    notebookPackageVerificationPlan(
+      ['packages/notebook-analysis'],
+      ['packages/notebook-syntax', 'packages/notebook-code-risk']
+    )
+  ).toEqual({ builds: ['notebook-syntax', 'notebook-analysis'], tests: ['notebook-analysis'] })
+  expect(notebookPackageVerificationPlan([], []).tests).toHaveLength(3)
+  expect(() => notebookPackageVerificationPlan([], ['../untrusted'])).toThrow(
+    'Invalid package verification roots'
+  )
 })

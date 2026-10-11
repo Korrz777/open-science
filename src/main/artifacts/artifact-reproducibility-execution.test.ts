@@ -1,3 +1,4 @@
+import { createNotebookDependencyAnalyzer } from '../notebook/dependency-analysis-adapter'
 import { existsSync } from 'node:fs'
 import {
   access,
@@ -27,7 +28,7 @@ import type {
 } from '../../shared/artifact-provenance'
 import { NotebookKernelExecutor } from '../notebook/kernel-executor'
 import { stdlibReplayCases } from '../notebook/stdlib-replay.fixture'
-import { NotebookDependencyAnalyzer } from '../notebook/dependency-analysis'
+
 import type { NotebookRunRecord } from '../../shared/notebook'
 import { sealArtifactProvenanceGraph } from './artifact-provenance-graph'
 import type { NotebookProcessSandbox } from '../notebook/process-sandbox'
@@ -1100,7 +1101,7 @@ describe('Artifact reproducibility execution', () => {
           inputFiles: [],
           fileEvidence: observed.fileEvidence
         }
-        const dependencies = await new NotebookDependencyAnalyzer({
+        const dependencies = await createNotebookDependencyAnalyzer({
           storageRoot,
           repository: { readSessionRuns: async () => [run] }
         }).project({ projectId: 'project', sessionId: 'session', completedRun: run })

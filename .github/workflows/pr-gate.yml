@@ -476,6 +476,18 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: node scripts/ci/npm-ci.mjs
+      - name: Select independent package verification from trusted policy
+        uses: ./.github/actions/select-package-tests
+        with:
+          enabled: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+          base: ${{ needs.preflight.outputs.base }}
+          head: ${{ needs.preflight.outputs.head }}
+          trusted-base: ${{ needs.preflight.outputs.trusted_base }}
+      - name: Verify independent Notebook tarballs
+        id: notebook_packages
+        continue-on-error: true
+        # Missing trusted selection retains full verification; host-only changes select none.
+        run: npm run check:notebook-packages -- --ci
       - name: Check Markdown formatting
         id: docs
         if: ${{ contains(fromJSON(needs.preflight.outputs.plan).lanes, 'docs') }}
@@ -610,6 +622,7 @@ jobs:
           FORMAT_OUTCOME: ${{ steps.format.outcome }}
           I18N_OUTCOME: ${{ steps.i18n.outcome }}
           INTERFACE_CONTRACTS_OUTCOME: ${{ steps.interface_contracts.outcome }}
+          NOTEBOOK_PACKAGES_OUTCOME: ${{ steps.notebook_packages.outcome }}
           RUNTIME_BUNDLE_OUTCOME: ${{ steps.runtime_bundle.outcome }}
           LINT_OUTCOME: ${{ steps.lint.outcome }}
           TYPECHECK_NODE_OUTCOME: ${{ steps.typechecks.outputs.node }}
@@ -636,6 +649,7 @@ jobs:
           check cli_node22 "$CLI_NODE22_OUTCOME"
           check i18n "$I18N_OUTCOME"
           check runtime_bundle "$RUNTIME_BUNDLE_OUTCOME"
+          check notebook_packages "$NOTEBOOK_PACKAGES_OUTCOME"
           exit "$failed"
 
   unit_shard:
@@ -966,7 +980,7 @@ jobs:
           src/main/literature/smart-collections.test.ts
           src/main/literature/pdf-structure/owner.test.ts
           src/main/notebook/kernel-startup-retry.integration.test.ts
-          src/main/notebook/code-risk-analysis.test.ts
+          packages/notebook-code-risk/src/code-risk-analysis.test.ts
           src/main/notebook/code-risk-admission.test.ts
           src/main/local-models/owner.test.ts
           --testNamePattern
@@ -991,7 +1005,7 @@ jobs:
         run: >-
           npx vitest run
           src/main/notebook/windows-shell.integration.test.ts
-          src/main/notebook/powershell-search-parser.windows.test.ts
+          src/main/notebook/powershell-search-parser.windows.integration.test.ts
           src/main/notebook/shell-search-scope.test.ts
       - name: Test Windows notebook shell service timeout
         id: windows_service_timeout

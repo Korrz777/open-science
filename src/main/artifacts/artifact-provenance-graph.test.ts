@@ -1,3 +1,4 @@
+import { createNotebookDependencyAnalyzer } from '../notebook/dependency-analysis-adapter'
 import { configureTestRuntimeMetadata } from '../../../test/runtime-metadata'
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -15,7 +16,7 @@ import type {
   ScientificOutputEvidence
 } from '../../shared/execution-file-evidence'
 import type { NotebookRunRecord } from '../../shared/notebook'
-import { NotebookDependencyAnalyzer } from '../notebook/dependency-analysis'
+
 import { NotebookRunRepository } from '../notebook/repository'
 import { createFrameNotebookLane } from '../notebook/lane-identity'
 import { ArtifactProvenanceProducerCapture } from './provenance-producer-capture'
@@ -322,11 +323,11 @@ describe('artifact provenance graph', () => {
         repository: { readSessionRuns: async () => activities.map(({ run }) => run) }
       }
       const request = { projectId: 'p', sessionId: 's', throughRunId: 'run-2' }
-      const projection = await new NotebookDependencyAnalyzer(options).project(request)
+      const projection = await createNotebookDependencyAnalyzer(options).project(request)
       expect(projection.stalenessByRunId['run-2']).toEqual({ state: 'clear' })
       expect(projection.unresolvedFileReadRunIds).toEqual(['run-2'])
       expect(projection.fileDependenciesByRunId?.['run-2']).toBeUndefined()
-      const reloaded = await new NotebookDependencyAnalyzer(options).project(request)
+      const reloaded = await createNotebookDependencyAnalyzer(options).project(request)
       expect(reloaded.unresolvedFileReadRunIds).toEqual(['run-2'])
       const graph = sealArtifactProvenanceGraph({
         target: target(),
@@ -423,7 +424,7 @@ describe('artifact provenance graph', () => {
             { script, kernelKind: 'r', status: index === 4 ? 'failed' : 'completed' }
           )
         )
-        const dependencies = await new NotebookDependencyAnalyzer({
+        const dependencies = await createNotebookDependencyAnalyzer({
           storageRoot: root,
           repository: { readSessionRuns: async () => activities.map((a) => a.run) }
         }).project({ projectId: 'p', sessionId: 's', throughRunId: 'run-6' })
@@ -491,7 +492,7 @@ describe('artifact provenance graph', () => {
           { script, kernelKind: 'r' }
         )
       )
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot: root,
         repository: { readSessionRuns: async () => activities.map((a) => a.run) }
       }).project({ projectId: 'p', sessionId: 's', throughRunId: 'run-3' })
@@ -581,7 +582,7 @@ describe('artifact provenance graph', () => {
         await mkdir(dirname(path), { recursive: true })
         await writeFile(path, activity.evidenceJson!)
       }
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot: root,
         repository: { readSessionRuns: async () => activities.map((a) => a.run) }
       }).project({ projectId: 'p', sessionId: 's', throughRunId: 'r-read' })
@@ -665,7 +666,7 @@ describe('artifact provenance graph', () => {
         await mkdir(dirname(path), { recursive: true })
         await writeFile(path, activity.evidenceJson!)
       }
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot: root,
         repository: { readSessionRuns: async () => activities.map((a) => a.run) }
       }).project({ projectId: 'p', sessionId: 's', throughRunId: 'plot' })
@@ -736,7 +737,7 @@ describe('artifact provenance graph', () => {
           { script: c.script, kernelKind: 'r' }
         )
       )
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot: root,
         repository: { readSessionRuns: async () => activities.map((a) => a.run) }
       }).project({ projectId: 'p', sessionId: 's', throughRunId: 'run-6' })
@@ -818,7 +819,7 @@ describe('artifact provenance graph', () => {
             }
           )
         )
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot: root,
         repository: { readSessionRuns: async () => activities.map((a) => a.run) }
       }).project({ projectId: 'p', sessionId: 's', throughRunId: 'run-11' })
@@ -900,7 +901,7 @@ describe('artifact provenance graph', () => {
             { script, kernelKind: language, kernelEpochId: `epoch-${index}` }
           )
         })
-        const dependencies = await new NotebookDependencyAnalyzer({
+        const dependencies = await createNotebookDependencyAnalyzer({
           storageRoot: root,
           repository: { readSessionRuns: async () => activities.map((a) => a.run) }
         }).project({ projectId: 'p', sessionId: 's', throughRunId: 'run-2' })
@@ -1006,7 +1007,7 @@ describe('artifact provenance graph', () => {
             { script: c.script, kernelKind: c.language, kernelEpochId: `${c.language}-epoch` }
           )
         )
-        const dependencies = await new NotebookDependencyAnalyzer({
+        const dependencies = await createNotebookDependencyAnalyzer({
           storageRoot: root,
           repository: { readSessionRuns: async () => activities.map((a) => a.run) }
         }).project({ projectId: 'p', sessionId: 's', throughRunId: 'run-8' })
@@ -1110,7 +1111,7 @@ describe('artifact provenance graph', () => {
             }
           )
         )
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot,
         repository: { readSessionRuns: async () => activities.map((a) => a.run) }
       }).project({ projectId: 'p', sessionId: 's', throughRunId: 'run-8' })
@@ -1207,7 +1208,7 @@ describe('artifact provenance graph', () => {
           { script }
         )
       )
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot,
         repository: { readSessionRuns: async () => activities.map((activity) => activity.run) }
       }).project({ projectId: 'project', sessionId: 'session', throughRunId: 'run-2' })
@@ -2017,7 +2018,7 @@ describe('artifact provenance graph', () => {
     const notebookRuns = [unrelated.run, producer.run]
 
     try {
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot,
         repository: { readSessionRuns: async () => notebookRuns }
       }).project({
@@ -2081,7 +2082,7 @@ describe('artifact provenance graph', () => {
     const notebookRuns = [failed.run, producer.run]
 
     try {
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot,
         repository: { readSessionRuns: async () => notebookRuns }
       }).project({
@@ -2143,7 +2144,7 @@ describe('artifact provenance graph', () => {
     const notebookRuns = [first.run, second.run]
 
     try {
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot,
         repository: { readSessionRuns: async () => notebookRuns }
       }).project({
@@ -2221,7 +2222,7 @@ describe('artifact provenance graph', () => {
     const notebookRuns = [pythonRun.run, rRun.run]
 
     try {
-      const dependencies = await new NotebookDependencyAnalyzer({
+      const dependencies = await createNotebookDependencyAnalyzer({
         storageRoot,
         repository: { readSessionRuns: async () => notebookRuns }
       }).project({
