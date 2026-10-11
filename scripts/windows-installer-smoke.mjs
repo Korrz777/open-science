@@ -10,6 +10,7 @@ import {
   readFile,
   readdir,
   rm,
+  stat,
   writeFile
 } from 'node:fs/promises'
 import { createServer } from 'node:http'
@@ -450,8 +451,24 @@ const packagedResourcePaths = (installDirectory, { includeWslPreview = true } = 
   )
 ]
 
-const packagedMainEntryPath = (installDirectory) =>
-  join(installDirectory, 'resources', 'app.asar', 'out', 'main', 'index.js')
+const packagedMcpRuntime = async (installDirectory, env) => {
+  const resources = join(installDirectory, 'resources')
+  // Upgrade certification also exercises released installers from before backend extraction.
+  const entries = await readdir(resources)
+  if (!entries.includes('backend')) {
+    return {
+      executable: join(installDirectory, APP_EXECUTABLE),
+      entryPath: join(resources, 'app.asar', 'out', 'main', 'index.js'),
+      env: { ...env, ELECTRON_RUN_AS_NODE: '1' }
+    }
+  }
+  const executable = join(resources, 'node-runtime', 'node.exe')
+  const entryPath = join(resources, 'backend', 'out', 'backend', 'index.cjs')
+  await Promise.all([access(executable), access(entryPath)])
+  const nodeEnv = { ...env, OPEN_SCIENCE_HOST_PACKAGED: '1' }
+  delete nodeEnv.ELECTRON_RUN_AS_NODE
+  return { executable, entryPath, env: nodeEnv }
+}
 
 const stringEnvironment = (environment) =>
   Object.fromEntries(Object.entries(environment).filter((entry) => typeof entry[1] === 'string'))
@@ -729,9 +746,11 @@ const runPackagedLocalRpcSmoke = async ({
     )
     await listenOnPipe(server, socketPath)
 
-    const executable = join(installDirectory, APP_EXECUTABLE)
-    const entryPath = packagedMainEntryPath(installDirectory)
-    const sharedEnv = { ...env, ELECTRON_RUN_AS_NODE: '1' }
+    const {
+      executable,
+      entryPath,
+      env: sharedEnv
+    } = await packagedMcpRuntime(installDirectory, env)
     notebookMcp = await connectPackagedMcp({
       executable,
       entryPath,
@@ -1160,6 +1179,29 @@ const launchForProcessLock = async ({
   }
 }
 
+const installApplication = async (installer, installDirectory, env, run = runProcess) => {
+  const started = performance.now()
+  try {
+    await run(installer, ['/S', `/D=${installDirectory}`], {
+      env,
+      timeoutMs: INSTALLER_TIMEOUT_MS
+    })
+  } finally {
+    const entries = await readdir(installDirectory).catch(() => [])
+    const archive = await stat(join(installDirectory, 'resources', 'app.asar')).catch(
+      () => undefined
+    )
+    console.log(
+      JSON.stringify({
+        installer: basename(installer),
+        elapsedMs: Math.round(performance.now() - started),
+        installedEntries: entries,
+        archiveBytes: archive?.size ?? 0
+      })
+    )
+  }
+}
+
 const installAndProbe = async ({
   installer,
   installDirectory,
@@ -1175,10 +1217,7 @@ const installAndProbe = async ({
     `Smoke testing ${phase} ${reuseInstallation ? 'installed app' : 'installer'}: ${basename(installer)}`
   )
   if (!reuseInstallation) {
-    await runProcess(installer, ['/S', `/D=${installDirectory}`], {
-      env,
-      timeoutMs: INSTALLER_TIMEOUT_MS
-    })
+    await installApplication(installer, installDirectory, env)
   }
   await assertPackagedResources(installDirectory, {
     certifyWslPreview: phase === 'current' || phase === 'restart'
@@ -1217,10 +1256,7 @@ const installOverRunningApp = async ({
     legacyConfigRoots
   })
   try {
-    await runProcess(installer, ['/S', `/D=${installDirectory}`], {
-      env,
-      timeoutMs: INSTALLER_TIMEOUT_MS
-    })
+    await installApplication(installer, installDirectory, env)
     await waitForShutdownExit(running.exit, running.child, running.output)
   } catch (error) {
     await terminateProcessTree(running.child)
@@ -1682,6 +1718,8 @@ const main = async () => {
     mkdir(env.APPDATA, { recursive: true }),
     mkdir(env.LOCALAPPDATA, { recursive: true }),
     mkdir(env.TEMP, { recursive: true }),
+    // Windows resolves the Downloads known folder against this isolated USERPROFILE.
+    mkdir(join(profileDirectory, 'Downloads'), { recursive: true }),
     ...(options.wslCertificationProfile
       ? [mkdir(certificationStorageRoot, { recursive: true })]
       : [])
@@ -1874,9 +1912,10 @@ export {
   launchUninstallerLockHolder,
   launchAndExpectDatabaseBlocked,
   installAndProbe,
+  installApplication,
   launchAndProbe,
   packagedArtifactSmokeRpcResult,
-  packagedMainEntryPath,
+  packagedMcpRuntime,
   observeChildClose,
   parseArguments,
   packagedResourcePaths,
