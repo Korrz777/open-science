@@ -449,7 +449,11 @@ ci(review): unify automated AI reviews
   its squash subject must retain the PR title's Conventional Commit format. Do not update a branch
   merely because `main` advanced; update it for conflicts or a maintainer request.
 - PR commits retain policy/CI Integrity, CodeQL (GitHub default setup, not a repository
-  workflow), AI review, static checks and portable tests on Ubuntu. Desktop changes run the Windows
+  workflow), AI review, static checks and selective portable tests on Ubuntu.
+  PRs and merge queue run affected host/package tests separately and skip unaffected packages.
+  Failed selected checks block merging; full portable suites run in scheduled/manual Source
+  Regression instead. See [Package workflows](docs/package-workflows.md) for selection details.
+  Desktop changes run the Windows
   mainline E2E journeys on one test runner, selected from the changed modules and their declared
   consumers: projects/sessions, conversation/approval, files/previews, Notebook analysis, and native
   Windows behavior. The Notebook journey uploads CSV data, runs real Python through the Agent/MCP
@@ -477,8 +481,7 @@ ci(review): unify automated AI reviews
   Platform-sensitive changes add focused Darwin sandbox, process/delegation, window/second-launch
   and Notebook checks in that same job. Selected native checks must succeed; skipped is not success.
   Queue does not repeat Windows business E2E or complete Mac business/presentation suites. Existing
-  selected Windows core checks remain blocking. Full portable fallback still applies to unknown
-  owners, destructive changes and global CI inputs.
+  selected Windows core checks remain blocking.
 - The platform policy uses the existing `macosProfile` values (`smoke` or `expanded`). An expanded
   queue plan selects the short core lane plus native checks on one runner. Manual `macos-smoke`,
   `source-regressions` and `e2e` runs retain their explicitly selected suites for early platform
@@ -616,8 +619,8 @@ change before proposing registration cleanup that depends on it.
 New explicit ownership cannot hide existing inferred test coverage. Unknown policy metadata and
 coverage reductions fail the check; owner approval alone does not waive these invariants.
 Module moves and consolidation must preserve surviving ownership, interfaces, test evidence and
-routing obligations, including consumer edges; they retain full PR validation. Deliberate
-reductions require a separate CI policy change, not a registration-only PR. Trusted selection may
+routing obligations, including consumer edges. Deliberate reductions require a separate CI policy
+change, not a registration-only PR. Trusted selection may
 accept additive evidence in existing module shards: it reads candidate Git blobs as JSON, verifies
 preserved policy/evidence against the merge base, and adds evidence to the trusted manifest without
 dropping newer mainline registrations. Changed records select their module evidence, including new
