@@ -634,6 +634,20 @@ test evidence and routing obligations retained, and every reachable or uncertain
 registered in the new owner. The original shared owner keeps its full-validation marker
 and surviving evidence. This is not a general exception for shared files or package edits;
 merge the protected policy before proposing the registration split.
+Host owners under `src/main/` and `src/renderer/` may split into new modules in a
+registration-only revision with unchanged source and tests. Trusted Integrity verifies that each
+new owner takes paths from exactly one surviving non-full owner, preserves moved interfaces,
+platform capabilities and downstream routing, and retains every reachable or uncertain test from
+the old execution plan. Explicit contracts, non-host evidence and explicit tests without a
+provable old source dependency follow the split as well. Moved owner tests keep their owner
+classification in the new module; tests still reaching the remaining owner, or with incomplete
+or unproven old source evidence, must also remain registered there. Original owners containing shared/preload/package sources, full owners (before or after the split), existing-module transfers and
+mixed source/policy edits do not qualify. Host build scripts and test harnesses may remain on the original owner; only main/renderer source paths can transfer. An old consumer registration may follow a verified split
+only when complete evidence proves its old dependency and no dependency on the remaining owner;
+uncertain and already-unproven host consumers stay registered. Original contracts and consumer-edge protections remain
+in force. Merge this protected policy before proposing a registration split that depends on it.
+The split still receives full PR validation; ordinary selective runs acquire no extra graph scan.
+
 The exact consumer-evidence guard also retains entries when a dependency cone is incomplete
 (for example, a generated native addon or computed import). Absence from a static graph alone
 must not demand removal that trusted Integrity cannot verify. Fully resolved obsolete consumers
