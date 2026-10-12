@@ -59,7 +59,7 @@ function fixture() {
   put(appTest, "import './app'")
   put(contract, 'export {}')
   put(consumer, "import './leaf'")
-  put(uncertain, "import { readFileSync } from 'node:fs'; readFileSync('runtime-input')")
+  put(uncertain, 'const target = process.env.RUNTIME_MODULE; import(target)')
   put(unrelated, 'export {}')
   put('scripts/ci/module-runtime-consumers.json', '{}')
   save()
@@ -350,4 +350,145 @@ it('rejects a remaining owner that acquires shared source during the split', () 
   state.split()
   state.manifest.modules.host.ownerPaths.push(shared)
   expect(state.check(base).ok).toBe(false)
+})
+
+it.each([
+  'process.env.HOST_TEST',
+  'window.api.readState()',
+  "import { readFileSync } from 'node:fs'; readFileSync('runtime-input')",
+  "import logger from 'external-logger'; logger.info('host')",
+  "import { expect } from 'vitest'; expect.any(Function)",
+  'type Callback = Function; const value = {} as Function',
+  "import { builtinModules } from 'node:module'; builtinModules.includes('fs')",
+  "import * as modules from 'node:module'; modules.builtinModules.includes('fs')",
+  "import { createRequire } from 'node:module'"
+])('does not treat host facilities as unknown import edges: %s', (facility) => {
+  const state = fixture()
+  state.put(app, 'export const value = 2')
+  state.put(appTest, `import './app'; ${facility}`)
+  state.put(consumer, `import './leaf'; ${facility}`)
+  state.manifest.modules.host.testFiles.consumer = [consumer]
+  state.save()
+  const base = state.commit()
+  state.split()
+  state.manifest.modules.foundation.testFiles.consumer = [consumer, uncertain]
+  const result = state.check(base)
+  expect(result.ok).toBe(true)
+  expect(result.retiredConsumers).not.toContain(`host:${consumer}`)
+  expect(state.manifest.modules.host.testFiles.consumer).toContain(consumer)
+  expect(state.manifest.modules.host.testFiles.owner).toContain(appTest)
+})
+
+it.each([
+  "import './missing-local'",
+  'const target = process.env.RUNTIME_MODULE; import(target)',
+  'require(process.env.RUNTIME_MODULE)',
+  "import '@aipoch/missing-package'",
+  "const load = require; load('./app')",
+  "const load = globalThis.require; load('./app')",
+  "const load = globalThis['require']; load('./app')",
+  "const key = process.env.LOADER; globalThis[key]('./app')",
+  "import { createRequire as factory } from 'node:module'; const load = factory(import.meta.url); load('./app')",
+  'eval("require(\'./app\')")',
+  'new Function("return import(\'./app\')")()'
+])('retains opaque dependency evidence even with a known source import: %s', (opaque) => {
+  const state = fixture()
+  state.put(consumer, `import './leaf'; ${opaque}`)
+  state.manifest.modules.host.testFiles.consumer = [consumer]
+  state.save()
+  const base = state.commit()
+  state.split()
+  state.manifest.modules.host.testFiles.consumer = []
+  const result = state.check(base)
+  expect(result.ok).toBe(false)
+  expect(result.retiredConsumers).not.toContain(`host:${consumer}`)
+})
+
+it('retains filesystem and IPC contracts without a provable old source import', () => {
+  const state = fixture()
+  state.put(
+    consumer,
+    "import { readFileSync } from 'node:fs'; readFileSync('src/main/leaf.ts'); window.api.readState()"
+  )
+  state.manifest.modules.host.testFiles.consumer = [consumer]
+  state.save()
+  const base = state.commit()
+  state.split()
+  state.manifest.modules.foundation.testFiles.consumer = [appTest, uncertain]
+  expect(state.check(base).ok).toBe(false)
+  state.manifest.modules.foundation.testFiles.consumer.push(consumer)
+  state.manifest.modules.host.testFiles.consumer = []
+  expect(state.check(base).ok).toBe(false)
+  state.manifest.modules.host.testFiles.consumer = [consumer]
+  expect(state.check(base).ok).toBe(true)
+})
+
+it('requires declared runtime consumers even when their imports reach a different owner', () => {
+  const state = fixture()
+  state.put(app, 'export const value = 2')
+  state.put(consumer, "import './app'; window.api.readState()")
+  state.put('scripts/ci/module-runtime-consumers.json', JSON.stringify({ [leaf]: [consumer] }))
+  const base = state.commit()
+  state.split()
+  state.manifest.modules.foundation.testFiles.consumer = [uncertain]
+  expect(state.check(base).ok).toBe(false)
+  state.manifest.modules.foundation.testFiles.consumer.push(consumer)
+  expect(state.check(base).ok).toBe(true)
+})
+
+it.each([
+  "const load = require; load('./leaf')",
+  "import Module from 'node:module'; Module._load('./leaf')",
+  "import { Module as Loader } from 'node:module'; Loader._load('./leaf')",
+  "import * as modules from 'node:module'; modules.Module.prototype.require('./leaf')",
+  "import * as modules from 'node:module'; modules['_load']('./leaf')",
+  "import Module = require('node:module'); Module._load('./leaf')",
+  "import Module = require('module'); Module['_load']('./leaf')",
+  "export { createRequire } from 'node:module'",
+  "export * from 'node:module'",
+  "module.constructor._load('./leaf')",
+  "module['constructor']['_load']('./leaf')",
+  "const loader = module; loader.constructor._load('./leaf')",
+  "process.getBuiltinModule('module')._load('./leaf')",
+  "process['getBuiltinModule']('module')._load('./leaf')",
+  "const { getBuiltinModule: load } = process; load('module')._load('./leaf')",
+  "process.mainModule.constructor._load('./leaf')"
+])('retains indirect loading when selecting the extracted owner evidence: %s', (loader) => {
+  const state = fixture()
+  state.put(app, 'export const value = 2')
+  state.put(consumer, `import './app'; ${loader}`)
+  const base = state.commit()
+  state.split()
+  state.manifest.modules.foundation.testFiles.consumer = [uncertain]
+  expect(state.check(base).ok).toBe(false)
+  state.manifest.modules.foundation.testFiles.consumer.push(consumer)
+  expect(state.check(base).ok).toBe(true)
+})
+
+it.each([
+  'window.api.readState()',
+  "process.emit('host-event')",
+  "import { readFileSync } from 'node:fs'; readFileSync('runtime-input')",
+  "new Worker('runtime-worker')"
+])('keeps old-owner evidence for unresolved host-facility relationships: %s', (facility) => {
+  const state = fixture()
+  state.put(consumer, `import './leaf'; ${facility}`)
+  state.manifest.modules.host.testFiles.consumer = [consumer]
+  state.save()
+  const base = state.commit()
+  state.split()
+  state.manifest.modules.host.testFiles.consumer = []
+  expect(state.check(base).ok).toBe(false)
+  state.manifest.modules.host.testFiles.consumer = [consumer]
+  expect(state.check(base).ok).toBe(true)
+})
+
+it('keeps a moved owner test on the old owner when it exercises host facilities', () => {
+  const state = fixture()
+  state.put(leafTest, "import './leaf'; window.api.readState()")
+  const base = state.commit()
+  state.split()
+  expect(state.check(base).ok).toBe(false)
+  state.manifest.modules.host.testFiles.consumer.push(leafTest)
+  expect(state.check(base).ok).toBe(true)
 })
