@@ -5,6 +5,8 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { expect, test } from '@playwright/test'
 import { launchOpenScience, removeTreeForCleanup } from './fixtures/electron-app'
+import { createProjectViaUi } from './fixtures/project'
+import { submitPromptViaUi } from './fixtures/conversation'
 
 const makeFixtureWritable = async (root: string): Promise<void> => {
   await chmod(root, 0o700)
@@ -96,18 +98,14 @@ test('keeps the desktop connected after stopping several active chats through th
       await window.api.settings.setAgentFramework({ id: 'opencode' })
     })
     await page.reload({ waitUntil: 'domcontentloaded' })
-    await page.locator('header').getByRole('button', { name: 'New project' }).click()
-    const dialog = page.getByRole('dialog', { name: 'New project' })
-    await dialog.getByLabel('Name').fill('Desktop stop connection regression')
-    await dialog.getByRole('button', { name: 'Create project' }).click()
+    await createProjectViaUi(page, 'Desktop stop connection regression')
     for (let round = 0; round < 2; round++) {
       const sessions: string[] = []
       for (let chat = 0; chat < 3; chat++) {
         phase = `round ${round + 1}: start chat ${chat + 1}`
         if (round || chat) await page.getByRole('button', { name: 'New', exact: true }).click()
         const prompt = `Hold the turn outcome fixture. Stop regression ${round}-${chat}`
-        await page.getByRole('textbox', { name: 'Ask anything' }).fill(prompt)
-        await page.getByRole('button', { name: 'Send message' }).click()
+        await submitPromptViaUi(page, prompt)
         await expect(
           page.getByText('Turn outcome cancellation checkpoint.', { exact: false })
         ).toBeVisible()
@@ -161,8 +159,7 @@ test('keeps the desktop connected after stopping several active chats through th
     phase = 'fresh prompt after six Stops'
     await page.getByRole('button', { name: 'New', exact: true }).click()
     const fresh = 'Summarize the deterministic fixture.'
-    await page.getByRole('textbox', { name: 'Ask anything' }).fill(fresh)
-    await page.getByRole('button', { name: 'Send message' }).click()
+    await submitPromptViaUi(page, fresh)
     await expect(page.getByText(`Deterministic reply: ${fresh}`, { exact: false })).toBeVisible()
     const after = JSON.parse(await readFile(ownerPath, 'utf8'))
     expect(after.pid).toBe(before.pid)
