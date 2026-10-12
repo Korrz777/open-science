@@ -3,7 +3,8 @@
     "src/main/acp/image-input-compatibility-owner.ts",
     "src/main/acp/vision-evidence-repository.ts",
     "src/main/acp/image-input-compatibility-owner.test.ts",
-    "src/main/acp/vision-evidence-repository.test.ts"
+    "src/main/acp/vision-evidence-repository.test.ts",
+    "src/main/acp/image-input-compatibility-port.ts"
   ],
   "interfacePaths": [
     "src/main/acp/image-input-compatibility-owner.ts",
