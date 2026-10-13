@@ -503,7 +503,11 @@
       "src/renderer/src/lib/last-opened-project.test.ts",
       "src/renderer/src/lib/locale-preference.test.ts",
       "src/renderer/src/lib/session-fork.test.ts",
-      "src/renderer/src/lib/session-package-export.test.ts"
+      "src/renderer/src/lib/session-package-export.test.ts",
+      "src/renderer/src/pages/workspace/workspace-session-agent-configuration-controller.availability.test.ts",
+      "src/renderer/src/pages/workspace/workspace-session-agent-configuration-controller.test.ts",
+      "src/renderer/src/stores/network-store.test.ts",
+      "src/renderer/src/stores/settings-store.test.ts"
     ]
   },
   "capabilityOverlays": [],

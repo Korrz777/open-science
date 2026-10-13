@@ -570,7 +570,9 @@
       "src/main/settings/backend-resolver.test.ts",
       "src/main/settings/provider-loopback-http-host.architecture.test.ts",
       "src/main/settings/provider-loopback-http-host.test.ts",
-      "src/main/settings/xai-protocol.test.ts"
+      "src/main/settings/xai-protocol.test.ts",
+      "src/main/node-entry.test.ts",
+      "src/main/runtime-network-node.integration.test.ts"
     ]
   },
   "capabilityOverlays": ["windows_sensitive", "e2e_regressions", "e2e_delegation"],

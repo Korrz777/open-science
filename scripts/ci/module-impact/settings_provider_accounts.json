@@ -582,7 +582,8 @@
       "src/main/desktop-runtime-transport-diagnostics.test.ts",
       "src/main/settings/codex-auth.test.ts",
       "src/main/settings/crypto.test.ts",
-      "src/main/settings/provider-env.test.ts"
+      "src/main/settings/provider-env.test.ts",
+      "src/main/node-entry.test.ts"
     ]
   },
   "capabilityOverlays": ["windows_sensitive", "e2e_regressions", "e2e_delegation"],

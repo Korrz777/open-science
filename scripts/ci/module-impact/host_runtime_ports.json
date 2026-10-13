@@ -989,7 +989,8 @@
       "src/main/windows-powershell.test.ts",
       "src/main/wsl/wsl-setup-terminal.test.ts",
       "src/renderer/src/components/CloseConfirmModal.render.test.tsx",
-      "src/main/websocket-frame-sender.test.ts"
+      "src/main/websocket-frame-sender.test.ts",
+      "src/main/node-entry.test.ts"
     ]
   },
   "capabilityOverlays": ["e2e_regressions", "e2e_delegation", "windows_sensitive"],

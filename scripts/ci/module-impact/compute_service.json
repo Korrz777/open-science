@@ -543,7 +543,8 @@
       "src/main/compute/skill-doc.test.ts",
       "src/renderer/src/lib/compute/WorkspaceComputeRecoveryBridge.render.test.tsx",
       "src/renderer/src/lib/compute/useJobAnalysisEffect.render.test.tsx",
-      "src/renderer/src/lib/compute/useSessionJobHydration.render.test.tsx"
+      "src/renderer/src/lib/compute/useSessionJobHydration.render.test.tsx",
+      "src/main/node-entry.test.ts"
     ]
   },
   "capabilityOverlays": ["windows_sensitive", "e2e_regressions", "e2e_delegation"],
