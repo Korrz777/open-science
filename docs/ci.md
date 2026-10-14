@@ -8,6 +8,12 @@ meet the [PR requirements](../CONTRIBUTING.md#pull-requests) and follow the
 
 ### Pull requests
 
+The independent **Impact registration** job runs a
+[fixed registration suite](testing.md#fast-impact-registration-gate) for every PR and merge group,
+regardless of the affected-test plan. It checks ownership, consumer/package evidence and platform
+selection with a parsing/test toolchain only, without building or running the application.
+The final PR Gate requires its success; no additional repository required-check name is needed.
+
 PR commits retain policy/CI Integrity, CodeQL (GitHub default setup, not a repository
 workflow), AI review, static checks and selective portable tests on Ubuntu.
 PRs and merge queue run affected host/package tests separately and skip unaffected packages.
