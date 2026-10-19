@@ -7779,6 +7779,11 @@
     "Dismissed: {{total}}": "Отклонено: {{total}}",
     "Current status unavailable: {{total}}": "Текущее состояние недоступно: {{total}}",
     "Historical result; current library status is unavailable.": "Исторический результат; текущее состояние в библиотеке недоступно.",
+    "You can cancel the download at any time.": "Загрузку можно отменить в любой момент.",
+    "Review what’s new, then download the update.": "Ознакомьтесь с изменениями, затем загрузите обновление.",
+    "Please wait for the app to close and reopen.": "Дождитесь закрытия и автоматического открытия приложения.",
+    "Ready to restart; running tasks will be checked.": "Всё готово к перезапуску; текущие задачи будут проверены.",
+    "Cannot cancel; the app will reopen automatically.": "Отмена невозможна; приложение откроется автоматически.",
     "Some PDF glyphs have no reliable text representation. Compare the original page.": "Для некоторых глифов PDF нет надёжного текстового представления. Сверьтесь с исходной страницей.",
     "Some PDF text has no reliable Unicode mapping. The extracted text is retained; compare it with the original page.": "Для части текста PDF отсутствует надёжное сопоставление с Unicode. Извлечённый текст сохранён; сравните его с исходной страницей.",
     "Some table structures are unreliable. Original images and text are retained without cell assignments.": "Структура некоторых таблиц ненадёжна. Исходные изображения и текст сохранены без распределения по ячейкам."

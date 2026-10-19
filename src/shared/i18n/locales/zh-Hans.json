@@ -7309,6 +7309,11 @@
     "Dismissed: {{total}}": "已忽略：{{total}}",
     "Current status unavailable: {{total}}": "无法确认当前状态：{{total}}",
     "Historical result; current library status is unavailable.": "这是历史结果，无法确认当前文献库状态。",
+    "You can cancel the download at any time.": "你可以随时取消下载。",
+    "Review what’s new, then download the update.": "查看更新内容，然后下载更新。",
+    "Please wait for the app to close and reopen.": "请等待应用关闭并自动重新打开。",
+    "Ready to restart; running tasks will be checked.": "已准备好重启，将先检查运行中的任务。",
+    "Cannot cancel; the app will reopen automatically.": "安装无法取消，完成后应用将自动重新打开。",
     "Some PDF glyphs have no reliable text representation. Compare the original page.": "部分 PDF 字形没有可靠的文字表示。请核对原始页面。",
     "Some PDF text has no reliable Unicode mapping. The extracted text is retained; compare it with the original page.": "部分 PDF 文字缺少可靠的 Unicode 映射。已保留提取的文字，请与原始页面核对。",
     "Some table structures are unreliable. Original images and text are retained without cell assignments.": "部分表格结构不可靠。已保留原始图像和文本，未将文本分配到单元格。"

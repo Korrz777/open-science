@@ -7309,6 +7309,11 @@
     "Dismissed: {{total}}": "除外済み: {{total}}",
     "Current status unavailable: {{total}}": "現在の状態を確認できません: {{total}}",
     "Historical result; current library status is unavailable.": "過去の結果です。ライブラリの現在の状態は確認できません。",
+    "You can cancel the download at any time.": "ダウンロードはいつでもキャンセルできます。",
+    "Review what’s new, then download the update.": "更新内容を確認してから、アップデートをダウンロードしてください。",
+    "Please wait for the app to close and reopen.": "アプリが終了し、自動で起動するまでお待ちください。",
+    "Ready to restart; running tasks will be checked.": "再起動の準備ができました。実行中のタスクを確認します。",
+    "Cannot cancel; the app will reopen automatically.": "キャンセルできません。完了後に自動で起動します。",
     "Some PDF glyphs have no reliable text representation. Compare the original page.": "一部の PDF グリフには信頼できるテキスト表現がありません。元のページと照合してください。",
     "Some PDF text has no reliable Unicode mapping. The extracted text is retained; compare it with the original page.": "一部の PDF テキストには信頼できる Unicode マッピングがありません。抽出したテキストは保持されています。元のページと照合してください。",
     "Some table structures are unreliable. Original images and text are retained without cell assignments.": "一部の表構造の信頼性を確認できません。元の画像とテキストは、セルへの割り当てを行わずに保持されます。"
