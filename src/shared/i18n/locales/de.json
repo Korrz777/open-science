@@ -162,6 +162,8 @@
     "The update status could not be confirmed. Closing this window does not stop installation.": "Der Aktualisierungsstatus konnte nicht bestätigt werden. Das Schließen dieses Fensters beendet die Installation nicht."
   },
   "renderer": {
+    "Preparing to receive package…": "Empfang des Pakets wird vorbereitet…",
+    "Unable to prepare browser import. Resolve the startup error and try again.": "Der Browserimport konnte nicht vorbereitet werden. Beheben Sie den Startfehler und versuchen Sie es erneut.",
     "Update preparation failed": "Vorbereitung des Updates fehlgeschlagen",
     "The app is still open. Resolve the problem and try again, or cancel to continue working.": "Die App bleibt geöffnet. Beheben Sie das Problem und versuchen Sie es erneut, oder brechen Sie ab, um weiterzuarbeiten.",
     "Select one or more options": "Eine oder mehrere Optionen auswählen",
@@ -7448,6 +7450,10 @@
     "Body areas are unavailable on rotated pages.": "Auf gedrehten Seiten sind Textbereiche nicht verfügbar.",
     "You can configure up to 32 pages.": "Sie können bis zu 32 Seiten konfigurieren.",
     "Native reading order will be used for your next message.": "Für Ihre nächste Nachricht wird die native Lesereihenfolge verwendet.",
+    "Waiting for browser…": "Warten auf den Browser…",
+    "Receiving package…": "Paket wird empfangen…",
+    "Cancel transfer": "Übertragung abbrechen",
+    "Transfer cancelled": "Übertragung abgebrochen",
     "Sign in to continue this conversation": "Anmelden, um diese Konversation fortzusetzen",
     "The agent requires authentication. Open Model settings and sign in to your provider, then retry. Your conversation and draft are preserved.": "Der Agent benötigt eine Authentifizierung. Öffnen Sie die Modelleinstellungen, melden Sie sich bei Ihrem Anbieter an und versuchen Sie es erneut. Ihre Konversation und Ihr Entwurf bleiben erhalten.",
     "Check package": "Paket prüfen",
