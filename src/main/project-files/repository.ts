@@ -26,7 +26,7 @@ import type {
   LegacyArtifactVersionAdopter,
   LegacyUploadVersionUpgrader
 } from './mutation-projection'
-import { ProjectFilesQueryOwner } from './query-owner'
+import { ProjectFilesQueryOwner, type HostArtifactVersionRecord } from './query-owner'
 
 // Stable public facade for the query-optimized Project Files projection. Session JSON remains
 // authoritative; internal owners separate read orchestration from mutation/completeness state.
@@ -114,6 +114,13 @@ class ManagedFileIndexRepository {
     finalizedArtifactsOnly?: boolean
   }): Promise<HostArtifactCatalogItem[]> {
     return this.queryOwner.readHostArtifactCatalog(request)
+  }
+
+  async readHostArtifactVersionRecords(request: {
+    projectId: string
+    versionIds: readonly string[]
+  }): Promise<HostArtifactVersionRecord[]> {
+    return this.queryOwner.readHostArtifactVersionRecords(request)
   }
 
   async searchArtifacts(request: SearchArtifactsRequest): Promise<SearchArtifactsResult> {

@@ -30,6 +30,7 @@ import { getProjectDbClient } from '../projects/prisma-client'
 import { SessionRepository } from '../session-persistence/repository'
 import { broadcastToRenderers } from '../renderer-broadcast'
 import type { ManagedFileVersionService } from '../managed-file-versions/service'
+import type { HostArtifactVersionRecord } from '../project-files/query-owner'
 import { acquireDataRootWriter } from '../storage/migration-state'
 import { ReviewerProjectRuntimeOwner, type ReviewerProjectAdmission } from './project-runtime-owner'
 import {
@@ -128,7 +129,8 @@ type ReviewerIpcOptions = {
   storageRoot?: string
   // Optional override for the data root (artifacts) (for testing).
   dataRoot?: string
-  managedFileVersions?: Pick<ManagedFileVersionService, 'openVersion'>
+  managedFileVersions?: Pick<ManagedFileVersionService, 'openVersion'> &
+    Partial<Pick<ManagedFileVersionService, 'openExactVersionContent'>>
   artifactCatalog?: {
     readHostArtifactCatalog(request: {
       projectId: string
@@ -142,6 +144,11 @@ type ReviewerIpcOptions = {
         versionId: string
       }>
     >
+    // Optional so existing test doubles keep the per-version fallback.
+    readHostArtifactVersionRecords?(request: {
+      projectId: string
+      versionIds: readonly string[]
+    }): Promise<HostArtifactVersionRecord[]>
   }
   artifactProvenanceRepository?: Pick<ArtifactProvenanceRepository, 'getReviewerVersionTrace'> &
     Partial<Pick<ArtifactProvenanceRepository, 'resolveReviewerTurnFileEvidence'>>
@@ -290,6 +297,51 @@ const createReviewerCommandOwner = (options: ReviewerIpcOptions): ReviewerComman
           }
         }
       : undefined
+  // The list load batches the exact versions referenced by the returned Reviews. The project catalog
+  // only exposes current heads, so historical reviewed versions still need this exact-version path.
+  // Any miss (or a batch failure) falls back to the per-version resolver above.
+  const createLoadArtifactVersionResolver = (
+    reviews: ReviewWithChecks[]
+  ): ArtifactVersionContentResolver | undefined => {
+    if (!resolveArtifactVersion) return undefined
+    const readBatch = options.artifactCatalog?.readHostArtifactVersionRecords
+    const openExact = options.managedFileVersions?.openExactVersionContent
+    const projectId = reviews[0]?.projectId
+    if (!readBatch || !openExact || !projectId) return resolveArtifactVersion
+    const versionIds = [...new Set(reviews.flatMap((review) => review.scope.artifactVersionIds))]
+    if (versionIds.length === 0) return resolveArtifactVersion
+
+    let batch: Promise<Map<string, HostArtifactVersionRecord>> | undefined
+    const loadBatch = (): Promise<Map<string, HostArtifactVersionRecord>> => {
+      batch ??= readBatch
+        .call(options.artifactCatalog, { projectId, versionIds })
+        .then((records) => new Map(records.map((record) => [record.versionId, record])))
+        .catch((error: unknown) => {
+          log.warn('review staleness batch lookup failed', { error: toErrorMessage(error) })
+          return new Map<string, HostArtifactVersionRecord>()
+        })
+      return batch
+    }
+
+    return async (request) => {
+      const record = (await loadBatch()).get(request.versionId)
+      if (!record) return resolveArtifactVersion(request)
+      if (request.sessionId && record.sessionId !== request.sessionId) {
+        return resolveArtifactVersion(request)
+      }
+      const lease = await openExact.call(options.managedFileVersions, record)
+      return {
+        path: lease.path,
+        filename: lease.filename,
+        ...(lease.contentType ? { contentType: lease.contentType } : {}),
+        checksum: lease.checksum,
+        size: lease.size,
+        readRange: lease.readRange,
+        verifyUnchanged: lease.verifyUnchanged,
+        close: lease.close
+      }
+    }
+  }
   const projectRuntime = options.projectRuntime ?? new ReviewerProjectRuntimeOwner()
   // Per-session abort capabilities for active and queued fix loops. Keyed by the main session id
   // (not the reviewer session id). Project deletion owns the same signal, so user cancellation and
@@ -324,7 +376,7 @@ const createReviewerCommandOwner = (options: ReviewerIpcOptions): ReviewerComman
         review.lifecycle === 'complete' ? { ...review, verificationUnavailable: true } : review
       )
     }
-    return flagStaleReviews(reviews, session, dataRoot, resolveArtifactVersion)
+    return flagStaleReviews(reviews, session, dataRoot, createLoadArtifactVersionResolver(reviews))
   }
 
   const abortFixLoop = (request: ReviewSessionRequest): void => {
