@@ -14,7 +14,7 @@ import type {
 } from '../../shared/reviewer'
 import type { PersistedChatSession } from '../../shared/session-persistence'
 import { REVIEWER_IPC } from '../../shared/reviewer'
-import { createLogger } from '@aipoch/diagnostics/node'
+import { createLogger, errorLogFields } from '@aipoch/diagnostics/node'
 import type { runReview as RunReview } from './orchestrator'
 import {
   resolveCorrectionResume,
@@ -363,20 +363,36 @@ const createReviewerCommandOwner = (options: ReviewerIpcOptions): ReviewerComman
   // audited turn has since changed (e.g. an artifact was edited after the review completed) so the UI
   // does not present a stale verdict as current.
   const getForSession = async (request: ReviewSessionRequest): Promise<ReviewWithChecks[]> => {
-    await ensureRecovery()
-    const reviews = await reviewRepository.getReviewSummariesForProjectSession(
-      request.projectId,
-      request.appSessionId
-    )
-    let session: PersistedChatSession | undefined
     try {
-      session = await sessionReader.loadSession(request.projectId, request.appSessionId)
-    } catch {
-      return reviews.map((review) =>
-        review.lifecycle === 'complete' ? { ...review, verificationUnavailable: true } : review
+      await ensureRecovery()
+      const reviews = await reviewRepository.getReviewSummariesForProjectSession(
+        request.projectId,
+        request.appSessionId
       )
+      let session: PersistedChatSession | undefined
+      try {
+        session = await sessionReader.loadSession(request.projectId, request.appSessionId)
+      } catch {
+        return reviews.map((review) =>
+          review.lifecycle === 'complete' ? { ...review, verificationUnavailable: true } : review
+        )
+      }
+      return flagStaleReviews(
+        reviews,
+        session,
+        dataRoot,
+        createLoadArtifactVersionResolver(reviews)
+      )
+    } catch (error) {
+      // Preserve the rejection for the caller, but keep the cause diagnosable. The transport's
+      // response-byte budget failure happens after this handler resolves and is logged separately.
+      log.error('review history load failed', {
+        projectId: request.projectId,
+        sessionId: request.appSessionId,
+        ...errorLogFields(error)
+      })
+      throw error
     }
-    return flagStaleReviews(reviews, session, dataRoot, createLoadArtifactVersionResolver(reviews))
   }
 
   const abortFixLoop = (request: ReviewSessionRequest): void => {
