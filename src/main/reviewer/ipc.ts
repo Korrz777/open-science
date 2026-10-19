@@ -312,7 +312,7 @@ const createReviewerCommandOwner = (options: ReviewerIpcOptions): ReviewerComman
   // does not present a stale verdict as current.
   const getForSession = async (request: ReviewSessionRequest): Promise<ReviewWithChecks[]> => {
     await ensureRecovery()
-    const reviews = await reviewRepository.getReviewsForProjectSession(
+    const reviews = await reviewRepository.getReviewSummariesForProjectSession(
       request.projectId,
       request.appSessionId
     )

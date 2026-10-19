@@ -44,6 +44,7 @@ vi.mock('./orchestrator', () => ({
 // invoke it directly and observe which storageRoot the thunk was constructed against.
 const reviewRepositoryThunks: Array<() => unknown> = []
 const getReviewsForSession = vi.fn().mockResolvedValue([])
+const getReviewSummariesForProjectSession = vi.fn()
 const recoverInterruptedReviews = vi.fn().mockResolvedValue(0)
 vi.mock('./repository', () => ({
   ReviewRepository: class {
@@ -51,6 +52,7 @@ vi.mock('./repository', () => ({
       reviewRepositoryThunks.push(thunk)
     }
     getReviewsForSession = getReviewsForSession
+    getReviewSummariesForProjectSession = getReviewSummariesForProjectSession
     recoverInterruptedReviews = recoverInterruptedReviews
     getReviewsForProjectSession = getReviewsForSession
   }
@@ -147,6 +149,10 @@ beforeEach(() => {
   // Default: the requested session exists, so triggerReview proceeds to runReview.
   sessionLoadOne.mockResolvedValue({ id: 'session-1' })
   getReviewsForSession.mockReset()
+  getReviewSummariesForProjectSession.mockReset()
+  getReviewSummariesForProjectSession.mockImplementation((...args: unknown[]) =>
+    getReviewsForSession(...args)
+  )
   recoverInterruptedReviews.mockReset()
   recoverInterruptedReviews.mockResolvedValue(0)
   // Default: no prior review for the turn, so the auto-idempotency check lets the run proceed.
@@ -737,7 +743,7 @@ describe('reviewer IPC handlers', () => {
         }
       )
 
-      expect(getReviewsForSession).toHaveBeenCalledWith('project-1', 'session-1')
+      expect(getReviewSummariesForProjectSession).toHaveBeenCalledWith('project-1', 'session-1')
       expect(flagStaleReviews).toHaveBeenCalledWith(
         reviews,
         expect.objectContaining({ id: 'session-1' }),
@@ -745,6 +751,35 @@ describe('reviewer IPC handlers', () => {
         expect.any(Function)
       )
       expect(result).toEqual(flagged)
+    })
+
+    it('loads the renderer list through the log-free summary projection', async () => {
+      const summaries = [
+        {
+          id: 'review-summary',
+          turnMessageId: 'message-1',
+          lifecycle: 'complete',
+          outcome: 'pass',
+          reviewerLog: [],
+          checks: [],
+          submittedChecks: []
+        }
+      ]
+      getReviewSummariesForProjectSession.mockResolvedValue(summaries)
+      registerReviewerIpcHandlers({ acpRuntime, managedFileVersions })
+
+      const getHandler = handlers.get(REVIEWER_IPC.GET_FOR_SESSION)
+      const result = await getHandler?.(
+        {},
+        {
+          projectId: 'project-1',
+          appSessionId: 'session-1'
+        }
+      )
+
+      expect(getReviewSummariesForProjectSession).toHaveBeenCalledWith('project-1', 'session-1')
+      expect(getReviewsForSession).not.toHaveBeenCalled()
+      expect(result).toEqual(summaries)
     })
 
     it('returns unflagged reviews when the session is not in the loaded list', async () => {

@@ -153,6 +153,49 @@ const asLifecycle = (value: string): ReviewLifecycle =>
 const asOutcome = (value: string | null): ReviewOutcome | null =>
   value === 'pass' || value === 'flagged' ? value : null
 
+// The list path deliberately omits the captured action stream: it is the largest Review field by far
+// (capped at 1 MiB per Review on write) and only the reviewer detail view needs it. Live pushes still
+// carry it; historical rows expose an empty log until an on-demand log read exists. Keeping it out of
+// this projection keeps a long review history from inflating every list load.
+const REVIEW_SUMMARY_SELECT = {
+  id: true,
+  projectId: true,
+  sessionId: true,
+  turnMessageId: true,
+  scope: true,
+  lifecycle: true,
+  outcome: true,
+  errorMessage: true,
+  model: true,
+  createdAt: true,
+  updatedAt: true
+} satisfies Prisma.ReviewSelect
+
+type PrismaReviewSummary = Prisma.ReviewGetPayload<{ select: typeof REVIEW_SUMMARY_SELECT }>
+
+// Maps a review row without its log into the shared domain shape. A missing log is NOT invalid here:
+// this projection never loads it. Only a corrupt scope downgrades the row, matching the invalid-scope
+// behavior of the full projection.
+const toReviewSummary = (row: PrismaReviewSummary): Review => {
+  const scope = decodeReviewScope(row.scope)
+  const invalid = scope === undefined
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    sessionId: row.sessionId,
+    turnMessageId: row.turnMessageId,
+    scope: scope ?? EMPTY_SCOPE(row.turnMessageId),
+    lifecycle: invalid ? 'error' : asLifecycle(row.lifecycle),
+    outcome: invalid ? null : asOutcome(row.outcome),
+    errorMessage: invalid ? 'Stored Review data is invalid.' : (row.errorMessage ?? undefined),
+    model: row.model,
+    reviewerLog: [],
+    createdAt: row.createdAt.getTime(),
+    updatedAt: row.updatedAt.getTime(),
+    ...(invalid ? { verificationUnavailable: true } : {})
+  }
+}
+
 // Maps a Prisma review row (JSON strings + DateTime) into the epoch-ms domain shape shared with the renderer.
 // v2: Review no longer has summary/checks columns; those are gone.
 // v3: reasoning replaced by reviewerLog (captured action stream).
@@ -675,6 +718,37 @@ class ReviewRepository {
     sessionId: string
   ): Promise<ReviewWithChecks[]> {
     return this.getReviews({ projectId, sessionId })
+  }
+
+  // UI list projection: same review/checks ordering without the captured action stream. Callers that
+  // need the log keep using getReviewsForProjectSession.
+  async getReviewSummariesForProjectSession(
+    projectId: string,
+    sessionId: string
+  ): Promise<ReviewWithChecks[]> {
+    const client = await this.getClient()
+    const rows = await client.review.findMany({
+      where: { projectId, sessionId },
+      orderBy: { createdAt: 'desc' },
+      select: REVIEW_SUMMARY_SELECT
+    })
+
+    const projections = await loadReviewSubmissionProjections(
+      client,
+      rows.map((row) => row.id)
+    )
+    return rows.map((row) => {
+      const { checks, submittedChecks } = projections.get(row.id)!
+      return {
+        ...toReviewSummary(row),
+        checks,
+        submittedChecks,
+        // Legacy: expose findings as alias for checks (same data).
+        get findings() {
+          return checks
+        }
+      } as ReviewWithChecks
+    })
   }
 
   private async getReviews(where: {
