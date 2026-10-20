@@ -161,6 +161,7 @@
     "The update status could not be confirmed. Closing this window does not stop installation.": "無法確認更新狀態。關閉此視窗不會停止安裝。"
   },
   "renderer": {
+    "Could not load Reviewer log.": "無法載入審閱器記錄。",
     "Preparing to receive package…": "正在準備接收套件…",
     "Unable to prepare browser import. Resolve the startup error and try again.": "無法準備瀏覽器匯入。請解決啟動錯誤後重試。",
     "Update preparation failed": "更新準備失敗",

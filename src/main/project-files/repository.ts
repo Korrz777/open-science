@@ -156,3 +156,5 @@ export type {
   LegacyArtifactVersionAdopter,
   LegacyUploadVersionUpgrader
 }
+
+export type { HostArtifactVersionRecord } from './query-owner'

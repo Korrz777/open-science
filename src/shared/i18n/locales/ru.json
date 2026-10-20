@@ -164,6 +164,7 @@
     "The update status could not be confirmed. Closing this window does not stop installation.": "Не удалось подтвердить состояние обновления. Закрытие этого окна не остановит установку."
   },
   "renderer": {
+    "Could not load Reviewer log.": "Не удалось загрузить журнал рецензента.",
     "Preparing to receive package…": "Подготовка к получению пакета…",
     "Unable to prepare browser import. Resolve the startup error and try again.": "Не удалось подготовить импорт из браузера. Устраните ошибку запуска и повторите попытку.",
     "Update preparation failed": "Не удалось подготовить обновление",

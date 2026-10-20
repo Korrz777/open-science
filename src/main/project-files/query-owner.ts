@@ -413,7 +413,8 @@ class ProjectFilesQueryOwner {
       where: {
         id: { in: versionIds },
         state: 'finalized',
-        artifact: { is: { projectId: request.projectId } }
+        artifact: { is: { projectId: request.projectId, currentVersionId: { not: null } } },
+        OR: [{ originKind: { not: 'agent_generated' } }, { managedVisibleAt: { not: null } }]
       },
       select: {
         id: true,
@@ -430,7 +431,7 @@ class ProjectFilesQueryOwner {
 
     const sessionIds = [...new Set(rows.map((row) => row.artifact.sessionId))]
     const sourceFileIds = [...new Set(rows.map((row) => row.artifactId))]
-    const [project, deletionIntent, origins, syncs, projections] = await Promise.all([
+    const [project, deletionIntent, origins, syncs, projections, uploads] = await Promise.all([
       client.project.findUnique({
         where: { id: request.projectId },
         select: { archivedAt: true }
@@ -458,10 +459,20 @@ class ProjectFilesQueryOwner {
           sourceFileId: { in: sourceFileIds }
         },
         select: { sourceFileId: true, deletedAt: true, deleteOperationId: true }
+      }),
+      client.uploadVersion.findMany({
+        where: {
+          id: { in: rows.map((row) => row.id) },
+          state: 'ready',
+          uploadFile: { is: { projectId: request.projectId } }
+        },
+        select: { id: true }
       })
     ])
-    if (project?.archivedAt || deletionIntent) return []
+    if (!project || project.archivedAt || deletionIntent) return []
 
+    // Ambiguous ids must use the single-version resolver, which rejects source collisions.
+    const ambiguousIds = new Set(uploads.map((upload) => upload.id))
     const originBySession = new Map(origins.map((origin) => [origin.sessionId, origin]))
     const blockedSessions = new Set(
       syncs.filter((sync) => sync.deletedAt || sync.deleteOperationId).map((sync) => sync.sessionId)
@@ -475,6 +486,7 @@ class ProjectFilesQueryOwner {
       .filter((row) => {
         const origin = originBySession.get(row.artifact.sessionId)
         return !(
+          ambiguousIds.has(row.id) ||
           !origin ||
           origin.state === 'deleting' ||
           origin.deletionOperationId ||

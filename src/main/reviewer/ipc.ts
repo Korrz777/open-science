@@ -6,6 +6,8 @@ import { ipcMainHandle } from '../ipc-handler-registry'
 
 import type {
   ReviewWithChecks,
+  ReviewLogRequest,
+  ReviewerLogEntry,
   ReviewRunRequest,
   ReviewRunResult,
   ReviewUpdateEvent,
@@ -30,7 +32,7 @@ import { getProjectDbClient } from '../projects/prisma-client'
 import { SessionRepository } from '../session-persistence/repository'
 import { broadcastToRenderers } from '../renderer-broadcast'
 import type { ManagedFileVersionService } from '../managed-file-versions/service'
-import type { HostArtifactVersionRecord } from '../project-files/query-owner'
+import type { HostArtifactVersionRecord } from '../project-files/repository'
 import { acquireDataRootWriter } from '../storage/migration-state'
 import { ReviewerProjectRuntimeOwner, type ReviewerProjectAdmission } from './project-runtime-owner'
 import {
@@ -193,6 +195,7 @@ type ReviewerCommandOwner = Readonly<{
   run: (request: ReviewRunRequest) => Promise<ReviewRunResult>
   triggerReview: (request: ReviewRunRequest) => Promise<ReviewRunResult>
   getForSession: (request: ReviewSessionRequest) => Promise<ReviewWithChecks[]>
+  getReviewLog: (request: ReviewLogRequest) => Promise<ReviewerLogEntry[]>
   abort: (request: ReviewSessionRequest) => void
   abortFixLoop: (request: ReviewSessionRequest) => void
 }>
@@ -879,6 +882,7 @@ const createReviewerCommandOwner = (options: ReviewerIpcOptions): ReviewerComman
     triggerReview: (request) => triggerReview(request),
     onSessionUpdated,
     getForSession,
+    getReviewLog: (request) => reviewRepository.getReviewLog(request),
     abort,
     abortFixLoop
   }
@@ -893,6 +897,9 @@ const registerReviewerIpcHandlers = (
   ipcMainHandle(REVIEWER_IPC.RUN, (_event, request: ReviewRunRequest) => owner.run(request))
   ipcMainHandle(REVIEWER_IPC.GET_FOR_SESSION, (_event, request: ReviewSessionRequest) =>
     owner.getForSession(request)
+  )
+  ipcMainHandle(REVIEWER_IPC.GET_REVIEW_LOG, (_event, request: ReviewLogRequest) =>
+    owner.getReviewLog(request)
   )
   ipcMainHandle(REVIEWER_IPC.ABORT_FIX_LOOP, (_event, request: ReviewSessionRequest) =>
     owner.abortFixLoop(request)

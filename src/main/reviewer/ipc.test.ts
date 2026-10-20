@@ -45,6 +45,7 @@ vi.mock('./orchestrator', () => ({
 const reviewRepositoryThunks: Array<() => unknown> = []
 const getReviewsForSession = vi.fn().mockResolvedValue([])
 const getReviewSummariesForProjectSession = vi.fn()
+const getReviewLog = vi.fn()
 const recoverInterruptedReviews = vi.fn().mockResolvedValue(0)
 vi.mock('./repository', () => ({
   ReviewRepository: class {
@@ -53,6 +54,7 @@ vi.mock('./repository', () => ({
     }
     getReviewsForSession = getReviewsForSession
     getReviewSummariesForProjectSession = getReviewSummariesForProjectSession
+    getReviewLog = getReviewLog
     recoverInterruptedReviews = recoverInterruptedReviews
     getReviewsForProjectSession = getReviewsForSession
   }
@@ -155,6 +157,7 @@ beforeEach(() => {
   sessionLoadOne.mockResolvedValue({ id: 'session-1' })
   getReviewsForSession.mockReset()
   getReviewSummariesForProjectSession.mockReset()
+  getReviewLog.mockReset()
   getReviewSummariesForProjectSession.mockImplementation((...args: unknown[]) =>
     getReviewsForSession(...args)
   )
@@ -720,6 +723,17 @@ describe('reviewer IPC handlers', () => {
         [REVIEWER_IPC.UPDATED, { review: completedReview }]
       ])
     )
+  })
+
+  it('reads a scoped log through the detail IPC without loading the Session history', async () => {
+    const request = { projectId: 'project-1', appSessionId: 'session-1', reviewId: 'review-1' }
+    const log = [{ kind: 'message', text: 'stored log' }]
+    getReviewLog.mockResolvedValue(log)
+    registerReviewerIpcHandlers({ acpRuntime, managedFileVersions })
+    await expect(handlers.get(REVIEWER_IPC.GET_REVIEW_LOG)?.({}, request)).resolves.toEqual(log)
+    expect(getReviewLog).toHaveBeenCalledExactlyOnceWith(request)
+    expect(getReviewSummariesForProjectSession).not.toHaveBeenCalled()
+    expect(sessionLoadOne).not.toHaveBeenCalled()
   })
 
   describe('reviewer:get-for-session handler', () => {

@@ -235,6 +235,39 @@ describe('review repository (integration)', { timeout: WINDOWS_SQLITE_TEST_TIMEO
     expect(full?.checks).toHaveLength(3)
   })
 
+  it('reads a single log only within its Project and Session and reports invalid persisted logs', async () => {
+    const repository = await createRepository()
+    const reviewerLog = [{ kind: 'message' as const, text: 'historical log' }]
+    const review = await repository.createReview({
+      projectId: 'project-1',
+      sessionId: 'session-log',
+      turnMessageId: 'a1',
+      scope: scope('a1'),
+      reviewerLog
+    })
+    const request = { projectId: 'project-1', appSessionId: 'session-log', reviewId: review.id }
+    await expect(repository.getReviewLog(request)).resolves.toEqual(reviewerLog)
+    for (const mismatch of [
+      { projectId: 'project-2' },
+      { appSessionId: 'session-2' },
+      { reviewId: 'missing' }
+    ]) {
+      await expect(repository.getReviewLog({ ...request, ...mismatch })).rejects.toThrow(
+        'not found'
+      )
+    }
+    await expect(repository.getReviewLog({ ...request, projectId: undefined! })).rejects.toThrow(
+      'identity is required'
+    )
+    await client!.review.update({ where: { id: review.id }, data: { reviewerLog: '[]' } })
+    await expect(repository.getReviewLog(request)).resolves.toEqual([])
+    await client!.review.update({
+      where: { id: review.id },
+      data: { reviewerLog: '[{"kind":"message","text":7}]' }
+    })
+    await expect(repository.getReviewLog(request)).rejects.toThrow('Stored Review log is invalid')
+  })
+
   it('does not invalidate a list summary merely because the log is absent, but still rejects a bad scope', async () => {
     const repository = await createRepository()
     const badLog = await repository.createReview({

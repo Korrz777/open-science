@@ -15,6 +15,7 @@ import type {
   ReviewFindingDispositionOutcome,
   ReviewFindingDispositionTrigger,
   ReviewerLogEntry,
+  ReviewLogRequest,
   ReviewLifecycle,
   ReviewOutcome,
   ReviewWithChecks,
@@ -155,7 +156,7 @@ const asOutcome = (value: string | null): ReviewOutcome | null =>
 
 // The list path deliberately omits the captured action stream: it is the largest Review field by far
 // (capped at 1 MiB per Review on write) and only the reviewer detail view needs it. Live pushes still
-// carry it; historical rows expose an empty log until an on-demand log read exists. Keeping it out of
+// carry it; historical rows load their log separately when the detail view opens. Keeping it out of
 // this projection keeps a long review history from inflating every list load.
 const REVIEW_SUMMARY_SELECT = {
   id: true,
@@ -718,6 +719,28 @@ class ReviewRepository {
     sessionId: string
   ): Promise<ReviewWithChecks[]> {
     return this.getReviews({ projectId, sessionId })
+  }
+
+  async getReviewLog(request: ReviewLogRequest): Promise<ReviewerLogEntry[]> {
+    if (
+      ![request?.projectId, request?.appSessionId, request?.reviewId].every(
+        (id) => typeof id === 'string' && id.length > 0
+      )
+    )
+      throw new Error('Review log identity is required.')
+    const client = await this.getClient()
+    const row = await client.review.findFirst({
+      where: {
+        id: request.reviewId,
+        projectId: request.projectId,
+        sessionId: request.appSessionId
+      },
+      select: { reviewerLog: true }
+    })
+    if (!row) throw new Error('Review was not found in this Session.')
+    const log = decodeReviewLog(row.reviewerLog)
+    if (!log) throw new Error('Stored Review log is invalid.')
+    return log
   }
 
   // UI list projection: same review/checks ordering without the captured action stream. Callers that
