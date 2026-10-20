@@ -1931,7 +1931,16 @@ describe('artifact finalization startup recovery', () => {
       })}\n`,
       'utf8'
     )
-    const recovered = await coordinator.loadAll()
+    // A real crash restarts the process, so recovery must not inherit the previous coordinator's
+    // in-memory hydration state. Recreate it before retrying the startup scan.
+    const recovered = await new SessionPersistenceCoordinator(
+      sessions,
+      files,
+      undefined,
+      undefined,
+      undefined,
+      provenance
+    ).loadAll()
 
     expect(recovered.sessions[0].messages[1].artifactIds).toEqual([
       linkedVersion.versionId,
