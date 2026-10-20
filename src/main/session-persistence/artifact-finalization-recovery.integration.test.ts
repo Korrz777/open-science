@@ -1259,10 +1259,18 @@ describe('artifact finalization startup recovery', () => {
     })
     await rm(join(storageRoot, ...snapshot.storageKey.split('/')))
     // Model a crash after the snapshot and Artifact Version commit but before recovered artifact
-    // metadata reached Session JSON.
+    // metadata reached Session JSON. A crash restarts the process, so do not reuse the coordinator's
+    // in-memory hydration cache.
     await sessions.saveSession(originalSession)
 
-    const recovered = await coordinator.loadAll()
+    const recovered = await new SessionPersistenceCoordinator(
+      sessions,
+      files,
+      undefined,
+      snapshots,
+      undefined,
+      prepared.provenance
+    ).loadAll()
 
     expect(recovered.sessions[0].messages[1].artifactIds).toEqual([prepared.version.versionId])
     await expect(
@@ -1918,7 +1926,16 @@ describe('artifact finalization startup recovery', () => {
       })}\n`,
       'utf8'
     )
-    const recovered = await coordinator.loadAll()
+    // A real crash restarts the process, so recovery must not inherit the previous coordinator's
+    // in-memory hydration state. Recreate it before retrying the startup scan.
+    const recovered = await new SessionPersistenceCoordinator(
+      sessions,
+      files,
+      undefined,
+      undefined,
+      undefined,
+      provenance
+    ).loadAll()
 
     expect(recovered.sessions[0].messages[1].artifactIds).toEqual([
       linkedVersion.versionId,
