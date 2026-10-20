@@ -143,7 +143,7 @@ export const managedFileVersionsCancelDiffContracts = {
     (
       request: ManagedFileVersionInspectRequest
     ) => Promise<ManagedFileVersionIpcResult<ManagedFileVersionInspectResult>>
-  >()('managed-file-versions', ['managed-file-versions:inspect', ELECTRON]),
+  >()('managed-file-versions', ['managed-file-versions:inspect', WEB]),
   'managedFileVersions.saveTextEdit': callable<
     (
       request: ManagedFileVersionSaveTextEditRequest
