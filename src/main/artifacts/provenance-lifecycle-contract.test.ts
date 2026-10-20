@@ -303,6 +303,26 @@ describe('artifact provenance durable lifecycle contract', () => {
 
     await expect(repository.finalizeRun(request)).resolves.toHaveLength(1)
     expect(transaction).toHaveBeenCalledTimes(2)
+    expect(transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      expect.objectContaining({ timeout: 30_000 })
+    )
+  })
+
+  it('rejects non-string artifact scope identities before querying', async () => {
+    const value = await fixture()
+    const repository = new ArtifactProvenanceRepository(value.repositoryOptions)
+
+    await expect(
+      repository.getLineage({
+        projectId: undefined as unknown as string,
+        appSessionId: 'session-1',
+        artifactId: 'artifact-1'
+      })
+    ).rejects.toThrow('Invalid project id')
+    await expect(
+      repository.deleteProjectProvenance(undefined as unknown as string)
+    ).rejects.toThrow('Invalid project id')
   })
 
   it.each([

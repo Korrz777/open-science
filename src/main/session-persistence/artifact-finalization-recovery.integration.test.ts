@@ -204,6 +204,52 @@ describe('artifact finalization startup recovery', () => {
     await expect(coordinator.retryArtifactFinalization(request)).resolves.toEqual(recovery)
   })
 
+  it('finalizes a large pending run without exhausting the transaction budget', async () => {
+    const compatibility = new ArtifactRepository(storageRoot)
+    const { provenance, versions } = await prepareRecovery(compatibility, 43)
+    const failed = (await sessions.loadSession(PROJECT_ID, SESSION_ID))!
+    failed.messages[1].responseToMessageId = 'prompt-1'
+    failed.conversationGraph!.messages[1].responseToMessageId = 'prompt-1'
+    await sessions.saveSession({
+      ...setTurnOutcome(failed, 'prompt-1', {
+        kind: 'failed',
+        settledAt: 3,
+        error: 'Artifact publication failed',
+        errorReportable: false,
+        recovery: 'retry-artifact-publication'
+      }),
+      status: 'error',
+      error: 'Artifact publication failed',
+      errorReportable: false
+    })
+    const coordinator = new SessionPersistenceCoordinator(
+      sessions,
+      files,
+      undefined,
+      undefined,
+      undefined,
+      provenance
+    )
+    const request = {
+      projectId: PROJECT_ID,
+      sessionId: SESSION_ID,
+      messageId: 'message-1',
+      pendingPaths: [],
+      artifactVersionIds: versions.map((version) => version.versionId)
+    }
+
+    const recovery = await coordinator.retryArtifactFinalization(request)
+    expect(recovery?.artifacts).toHaveLength(43)
+    const rows = await client.artifactVersion.findMany({ where: { artifactRunId: RUN_ID } })
+    expect(rows).toHaveLength(43)
+    expect(rows.every((row) => row.state === 'finalized' && row.messageId === 'message-1')).toBe(
+      true
+    )
+    const durableSession = await sessions.loadSession(PROJECT_ID, SESSION_ID)
+    expect(durableSession?.status).toBe('idle')
+    expect(durableSession?.messages[1].artifactIds).toHaveLength(43)
+  }, 60_000)
+
   it('completes a resumed turn when its earlier published Version is outside the current retry batch', async () => {
     const compatibility = new ArtifactRepository(storageRoot)
     const { provenance, version: pendingVersion, context } = await prepareRecovery(compatibility)
