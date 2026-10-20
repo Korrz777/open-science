@@ -365,6 +365,55 @@ describe('application command composition', () => {
     expect(listProjects).toHaveBeenCalledOnce()
   })
 
+  it('lets remote Web inspect managed files and rejects identity drift', async () => {
+    const inspect = vi.fn(async (request: { projectId: string; fileId: string }) => ({
+      ok: true as const,
+      value: {
+        source: 'artifact',
+        projectId: request.projectId,
+        fileId: request.fileId,
+        sessionId: 'session-1'
+      }
+    }))
+    const composition = createApplicationCommandComposition({
+      ...dependencies(),
+      dataContent: {
+        managedFileVersions: { inspect },
+        projects: { list: vi.fn() },
+        withDataRootWrite: async (operation: () => Promise<unknown>) => operation()
+      } as never
+    })
+    const request = { source: 'artifact', projectId: 'project-1', fileId: 'file-1' }
+
+    expect(composition.remoteWeb.commandNames()).toContain('managed-file-versions:inspect')
+    expect(composition.remoteWeb.rejectedCommandNames()).not.toContain(
+      'managed-file-versions:inspect'
+    )
+    await expect(
+      composition.remoteWeb.invoke('managed-file-versions:inspect', {
+        ...invocation('remote'),
+        args: [request]
+      })
+    ).resolves.toMatchObject({ ok: true, value: { projectId: 'project-1', fileId: 'file-1' } })
+
+    inspect.mockResolvedValueOnce({
+      ok: true,
+      value: {
+        source: 'artifact',
+        projectId: 'project-2',
+        fileId: 'file-1',
+        sessionId: 'session-1'
+      }
+    })
+    await expect(
+      composition.remoteWeb.invoke('managed-file-versions:inspect', {
+        ...invocation('remote'),
+        args: [request]
+      })
+    ).rejects.toThrow('identity')
+    await composition.dispose()
+  })
+
   it('exposes only Reviewer run and reads to Task automation', () => {
     const composition = createApplicationCommandComposition(dependencies())
     const reviewerCommands = ['reviewer:abort-fix-loop', 'reviewer:get-for-session', 'reviewer:run']
