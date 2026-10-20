@@ -1062,14 +1062,6 @@ class ArtifactProvenanceRepository {
       nativeFinalizationRunIds: [],
       unresolvedNativeFinalizationRunIds: []
     }
-    const unindexedSnapshot = await this.unindexedRecovery.prepareSession(projectId, appSessionId)
-    const stagingResult = await this.stagingRecovery.reconcileSession(
-      projectId,
-      appSessionId,
-      options?.removeOrphanStaging
-    )
-    result.recoveredVersionIds.push(...stagingResult.recoveredVersionIds)
-    result.quarantinedVersionIds.push(...stagingResult.quarantinedVersionIds)
     const explicitlyScoped =
       options?.artifactRunIds !== undefined || options?.artifactVersionIds !== undefined
     const shouldReconcileFinalization =
@@ -1082,6 +1074,20 @@ class ArtifactProvenanceRepository {
         durableSession,
         options?.projectReconciliation
       ))
+    // A settled Session with no pending, unlinked, or compatibility-pending Version has no
+    // Artifact storage work to do. Skip the staging and unindexed filesystem scans as well as the
+    // finalization scan; direct callers without a durable Session still take the full path.
+    if (!explicitlyScoped && durableSession?.status === 'idle' && !shouldReconcileFinalization) {
+      return result
+    }
+    const unindexedSnapshot = await this.unindexedRecovery.prepareSession(projectId, appSessionId)
+    const stagingResult = await this.stagingRecovery.reconcileSession(
+      projectId,
+      appSessionId,
+      options?.removeOrphanStaging
+    )
+    result.recoveredVersionIds.push(...stagingResult.recoveredVersionIds)
+    result.quarantinedVersionIds.push(...stagingResult.quarantinedVersionIds)
     if (shouldReconcileFinalization) {
       const finalizationResult = await this.finalizationRecovery.reconcileSession(
         projectId,
