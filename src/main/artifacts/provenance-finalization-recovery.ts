@@ -16,7 +16,6 @@ import {
   validateDurableMessageOwnership
 } from './provenance-message-finalization'
 import type { ArtifactRepository, PendingArtifactRunPublication } from './repository'
-import { requireAgentArtifactVersion } from './provenance-version-kind'
 
 type ArtifactProjectReconciliationState = {
   readonly projectId: string
@@ -35,6 +34,39 @@ type PreparedArtifactFinalizationContext = Pick<
   FinalizeArtifactVersionsRequest,
   'rootFrameId' | 'agentFrameId' | 'messageBranchId' | 'runtimeSegmentId' | 'promptMessageId'
 >
+
+type FinalizationRecoveryVersion = {
+  id: string
+  artifactRunId: string
+  state: string
+  messageId: string | null
+  rootFrameId: string
+  agentFrameId: string
+  messageBranchId: string
+  runtimeSegmentId: string
+  promptMessageId: string
+}
+
+const hasCompleteFinalizationContext = (version: {
+  id: string
+  state: string
+  messageId: string | null
+  artifactRunId: string | null
+  rootFrameId: string | null
+  agentFrameId: string | null
+  messageBranchId: string | null
+  runtimeSegmentId: string | null
+  promptMessageId: string | null
+}): version is FinalizationRecoveryVersion => {
+  return (
+    version.artifactRunId !== null &&
+    version.rootFrameId !== null &&
+    version.agentFrameId !== null &&
+    version.messageBranchId !== null &&
+    version.runtimeSegmentId !== null &&
+    version.promptMessageId !== null
+  )
+}
 
 type ArtifactFinalizationRecoveryResult = {
   recoveredVersionIds: string[]
@@ -187,15 +219,30 @@ class ArtifactProvenanceFinalizationRecovery {
     }
 
     const client = await this.options.getClient()
+    // Recovery only needs its small ownership/context projection. Selecting every Artifact
+    // Version column makes this scan deserialize historical execution snapshots, which can be
+    // several megabytes each and can exhaust the Prisma native string bridge for the whole
+    // Session. Keep unrelated payload columns out of the recovery path.
     const allFinalizationVersions = (
       await client.artifactVersion.findMany({
         where: {
           originKind: 'agent_generated',
           state: { in: ['pending', 'finalized'] },
           artifact: { is: { projectId, sessionId: appSessionId } }
+        },
+        select: {
+          id: true,
+          artifactRunId: true,
+          state: true,
+          messageId: true,
+          rootFrameId: true,
+          agentFrameId: true,
+          messageBranchId: true,
+          runtimeSegmentId: true,
+          promptMessageId: true
         }
       })
-    ).map(requireAgentArtifactVersion)
+    ).filter(hasCompleteFinalizationContext)
     const requestedRunIds = artifactRunIds ? new Set(artifactRunIds) : undefined
     const requestedVersionIds = artifactVersionIds ? new Set(artifactVersionIds) : undefined
     const isScopedRetry = requestedRunIds !== undefined || requestedVersionIds !== undefined
