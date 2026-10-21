@@ -169,8 +169,23 @@ without requiring notarization. Windows nightly permits unsigned binaries but re
 signatures; stable Release checks remain unchanged. Nightly does not publish CLI
 deb/rpm packages, npm packages or Homebrew updates.
 The manual `publish-npm.yml` workflow defaults to archive dry-run; `distribution=npm` retains the
-credential-free npm packaging dry-run. Automatic npm publication is deferred; no npm token is needed
-for a GitHub Release.
+credential-free npm packaging dry-run. No npm token is needed for a GitHub Release.
+
+### Publishing npm packages
+
+`npm-release.yml` publishes the shared CLI entry package and five platform packages after a
+successful stable Release. Manual runs can select a historical `release_run_id` and default to
+`dry_run=true`; use a single `target` for focused checks and `all` for publication. The existing
+`publish-npm.yml` dispatcher also supports historical npm dry-runs.
+
+The workflow builds the certified Release source and verifies native installation on every
+platform before publishing. It checks source, version and integrity, publishes platform packages
+first, and rejects overwrites or `latest` downgrades. Retry a partial publication using the same
+run's artifacts rather than rebuilding already published versions.
+
+Publishing runs from `main` through the `npm` environment using npm Trusted Publishing (OIDC).
+First publication requires explicit bootstrap credentials; remove them after configuring trust.
+Build jobs and dry-runs receive no npm credentials.
 
 ## Supplemental desktop coverage
 
