@@ -250,6 +250,138 @@ describe('artifact finalization startup recovery', () => {
     expect(durableSession?.messages[1].artifactIds).toHaveLength(43)
   }, 60_000)
 
+  it('selects only ownership and context fields during the recovery scan', async () => {
+    const compatibility = new ArtifactRepository(storageRoot)
+    const { provenance } = await prepareRecovery(compatibility)
+    const session = (await sessions.loadSession(PROJECT_ID, SESSION_ID))!
+    const scan = vi.spyOn(client.artifactVersion, 'findMany')
+
+    await provenance.reconcileSession(PROJECT_ID, SESSION_ID, session, {
+      artifactRunIds: [],
+      artifactVersionIds: []
+    })
+
+    expect(scan).toHaveBeenCalledWith({
+      where: {
+        originKind: 'agent_generated',
+        state: { in: ['pending', 'finalized'] },
+        artifact: { is: { projectId: PROJECT_ID, sessionId: SESSION_ID } }
+      },
+      select: {
+        id: true,
+        artifactRunId: true,
+        state: true,
+        messageId: true,
+        rootFrameId: true,
+        agentFrameId: true,
+        messageBranchId: true,
+        runtimeSegmentId: true,
+        promptMessageId: true
+      }
+    })
+  })
+
+  it.each([
+    ['rootFrameId', 1],
+    ['agentFrameId', 1],
+    ['messageBranchId', 1],
+    ['runtimeSegmentId', 1],
+    ['promptMessageId', 1],
+    ['artifactRunId', 1],
+    ['rootFrameId', 2]
+  ] as const)(
+    'blocks compatibility fallback for missing %s in a %i-Version native run',
+    async (field, count) => {
+      const compatibility = new ArtifactRepository(storageRoot)
+      const { provenance, versions } = await prepareRecovery(compatibility, count)
+      // Normal writes enforce complete provenance; model a corrupt database on one connection.
+      await client.$transaction(async (transaction) => {
+        await transaction.$executeRawUnsafe('PRAGMA ignore_check_constraints = ON')
+        try {
+          await transaction.artifactVersion.update({
+            where: { id: versions[0].versionId },
+            data: { [field]: null }
+          })
+        } finally {
+          await transaction.$executeRawUnsafe('PRAGMA ignore_check_constraints = OFF')
+        }
+      })
+      const coordinator = new SessionPersistenceCoordinator(
+        sessions,
+        files,
+        undefined,
+        undefined,
+        undefined,
+        provenance
+      )
+      const fallback = vi.spyOn(compatibility, 'reconcilePendingArtifactPaths')
+      const handlers = createArtifactHandlers(compatibility, new ArtifactRunRegistry(), {
+        recoverPendingArtifacts: (request) => coordinator.retryArtifactFinalization(request)
+      })
+
+      const request = {
+        projectId: PROJECT_ID,
+        sessionId: SESSION_ID,
+        messageId: 'message-1',
+        pendingPaths: [
+          join(
+            storageRoot,
+            'artifacts',
+            PROJECT_ID,
+            STORAGE_SESSION_ID,
+            '.pending',
+            RUN_ID,
+            'result.png'
+          )
+        ],
+        artifactVersionIds: versions.map((version) => version.versionId)
+      }
+      const failure =
+        field === 'artifactRunId'
+          ? 'missing its finalization run identity'
+          : 'Native Artifact finalization proof is invalid'
+      await expect(handlers.reconcilePendingArtifacts(request)).rejects.toThrow(failure)
+      await expect(
+        handlers.reconcilePendingArtifacts({ ...request, artifactVersionIds: undefined })
+      ).rejects.toThrow(failure)
+      await expect(
+        handlers.reconcilePendingArtifacts({ ...request, pendingPaths: [] })
+      ).rejects.toThrow(failure)
+
+      expect(fallback).not.toHaveBeenCalled()
+      await expect(
+        compatibility.listPendingRunFiles({
+          projectId: PROJECT_ID,
+          sessionId: STORAGE_SESSION_ID,
+          runId: RUN_ID
+        })
+      ).resolves.toHaveLength(count)
+      await expect(
+        client.artifactVersion.findMany({
+          where: { id: { in: versions.map((version) => version.versionId) } }
+        })
+      ).resolves.toEqual(
+        expect.arrayContaining(
+          versions.map((version) =>
+            expect.objectContaining({
+              id: version.versionId,
+              state: 'pending',
+              messageId: null,
+              managedVisibleAt: null
+            })
+          )
+        )
+      )
+      await expect(
+        compatibility.listMessageFiles({
+          projectId: PROJECT_ID,
+          sessionId: SESSION_ID,
+          messageId: 'message-1'
+        })
+      ).resolves.toEqual([])
+    }
+  )
+
   it('completes a resumed turn when its earlier published Version is outside the current retry batch', async () => {
     const compatibility = new ArtifactRepository(storageRoot)
     const { provenance, version: pendingVersion, context } = await prepareRecovery(compatibility)

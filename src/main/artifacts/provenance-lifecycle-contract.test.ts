@@ -309,6 +309,39 @@ describe('artifact provenance durable lifecycle contract', () => {
     )
   })
 
+  it('reads finalized Versions only after the ownership transaction commits', async () => {
+    const value = await fixture()
+    const session = durableSession(value.storageRoot)
+    const repository = new ArtifactProvenanceRepository({
+      ...value.repositoryOptions,
+      loadSession: async () => session
+    })
+    await value.stagePng('post-commit read bytes')
+    const version = await repository.createVersion(versionRequest(session))
+    const transaction = value.client.$transaction.bind(value.client)
+    let committed = false
+    vi.spyOn(value.client, '$transaction').mockImplementation(async (...args) => {
+      const result = await Reflect.apply(transaction, value.client, args)
+      committed = true
+      return result
+    })
+    const findMany = value.client.artifactVersion.findMany.bind(value.client.artifactVersion)
+    const read = vi
+      .spyOn(value.client.artifactVersion, 'findMany')
+      .mockImplementation((...args) => {
+        expect(committed).toBe(true)
+        return Reflect.apply(findMany, value.client.artifactVersion, args)
+      })
+
+    await expect(
+      repository.finalizeRun(finalizationRequest(version.versionId, session))
+    ).resolves.toHaveLength(1)
+    expect(read).toHaveBeenCalledOnce()
+    await expect(
+      value.client.artifactVersion.findUniqueOrThrow({ where: { id: version.versionId } })
+    ).resolves.toMatchObject({ state: 'finalized', messageId: 'message-1' })
+  })
+
   it('rejects non-string artifact scope identities before querying', async () => {
     const value = await fixture()
     const repository = new ArtifactProvenanceRepository(value.repositoryOptions)
