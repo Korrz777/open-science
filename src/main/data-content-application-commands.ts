@@ -1304,6 +1304,10 @@ const registerDataContentApplicationCommands = (
         ) {
           throw new Error('Managed file version identity does not match the requested scope.')
         }
+        // Web can inspect versions, but its renderer has no edit or diff commands.
+        if (result.ok && invocation.callerContext.surface === 'web') {
+          return { ...result, value: { ...result.value, canEdit: false, canDiff: false } }
+        }
         return result
       },
       'managed-file-versions:save-text-edit': ({ args }) =>
