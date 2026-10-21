@@ -135,6 +135,7 @@
       "src/renderer/src/pages/workspace/composer/ArtifactMentionPopup.render.test.tsx",
       "src/renderer/src/pages/workspace/literature-save-contract.test.tsx"
     ],
+    "connector_core": ["packages/connector-builtins/src/scientific-expansion.test.ts"],
     "delegation_execution_contracts": [
       "src/renderer/src/pages/workspace/ConversationPanel.interaction.test.tsx"
     ],
