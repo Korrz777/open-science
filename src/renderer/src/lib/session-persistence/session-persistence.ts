@@ -107,23 +107,30 @@ const cacheSessionContent = (session: PersistedChatSession): void => {
   }
 }
 
+const resetSessionContentCacheForTests = (): void => {
+  sessionContentCache.clear()
+}
+
 const loadPersistedSession = async (
   request: LoadSessionRequest,
-  api: SessionReadApi = window.api.sessions
+  api: SessionReadApi = window.api.sessions,
+  options: { bypassCache?: boolean } = {}
 ): Promise<PersistedChatSession | undefined> => {
   const storeSummary = useSessionStore
     .getState()
     .sessions.find(
       (session) => session.id === request.sessionId && session.projectId === request.projectId
     )
-  const cached = sessionContentCache.get(sessionContentCacheKey(request))
-  if (
-    cached &&
-    storeSummary &&
-    typeof storeSummary.revision === 'number' &&
-    storeSummary.revision === cached.revision
-  ) {
-    return cached.session
+  if (!options.bypassCache) {
+    const cached = sessionContentCache.get(sessionContentCacheKey(request))
+    if (
+      cached &&
+      storeSummary &&
+      typeof storeSummary.revision === 'number' &&
+      storeSummary.revision === cached.revision
+    ) {
+      return cached.session
+    }
   }
   if (typeof api.loadOne === 'function') {
     const result = await api.loadOne(request)
@@ -1310,7 +1317,8 @@ const saveSessionInOrder = async (
                 projectId: submitted.projectId,
                 sessionId: submitted.id
               },
-              api
+              api,
+              { bypassCache: true }
             ),
           retry
         )
@@ -1492,7 +1500,11 @@ const retryPendingArtifactFinalization = async (
     }
     // Main owns Artifact publication and outcome repair. The command result is only file metadata;
     // refresh its committed Session instead of reconstructing a competing renderer settlement.
-    const authority = await loadPersistedSession({ projectId: session.projectId, sessionId })
+    const authority = await loadPersistedSession(
+      { projectId: session.projectId, sessionId },
+      undefined,
+      { bypassCache: true }
+    )
     if (!authority) throw new Error('Session not found.')
     useSessionStore.getState().applyDurableSessionProjection({
       source: session,
@@ -1764,7 +1776,8 @@ const loadPersistedSessions = async (
               summary.id,
               await loadPersistedSession(
                 { projectId: summary.projectId, sessionId: summary.id },
-                api
+                api,
+                { bypassCache: summary.needsStartupRecovery }
               )
             ] as const
         )
@@ -1892,7 +1905,8 @@ const createStoreSaver = (
             projectId: submitted.projectId,
             sessionId: submitted.id
           },
-          api
+          api,
+          { bypassCache: true }
         ),
       (rebased) => (options ? save(rebased, options) : save(rebased))
     )
@@ -1970,7 +1984,8 @@ const createStoreSaver = (
                     projectId: session.projectId,
                     sessionId: session.id
                   },
-                  api
+                  api,
+                  { bypassCache: true }
                 )
                 if (!authority) throw new Error('Session JSON is missing for metadata persistence.')
                 const fields = new Set(coalescedOptions?.conflictRebaseFields ?? [])
@@ -2482,10 +2497,14 @@ const useSessionPersistence = (): SessionPersistenceState => {
             Boolean(event.sessionId && event.terminalScope)
         )
         .map(async (event) => {
-          const authority = await loadPersistedSession({
-            projectId: event.terminalScope!.projectId,
-            sessionId: event.sessionId!
-          })
+          const authority = await loadPersistedSession(
+            {
+              projectId: event.terminalScope!.projectId,
+              sessionId: event.sessionId!
+            },
+            undefined,
+            { bypassCache: true }
+          )
           return { event, authority }
         })
     )
@@ -3055,6 +3074,7 @@ export {
   loadPersistedSession,
   loadPersistedSessions,
   retryPendingArtifactFinalization,
+  resetSessionContentCacheForTests,
   resetSessionPersistenceWriteFailuresForTests,
   deriveSessionCatalogRecovery,
   deleteSession,

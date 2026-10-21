@@ -47,6 +47,7 @@ import {
   flushSessionPersistence,
   loadPersistedSession,
   loadPersistedSessions,
+  resetSessionContentCacheForTests,
   resetSessionPersistenceWriteFailuresForTests,
   retryPendingArtifactFinalization,
   saveSessionInOrder,
@@ -186,6 +187,7 @@ const createApi = (overrides: Partial<SessionPersistenceApi> = {}): SessionPersi
 beforeEach(() => {
   useDesktopRuntimeRecoveryStore.setState({ phase: 'connected', epoch: 0, closing: false })
   resetSessionConversationIntentsForTests()
+  resetSessionContentCacheForTests()
   useWorkspaceOperationErrors.setState({ errors: {} })
   useSessionStore.setState(createInitialSessionState())
 })
@@ -601,6 +603,25 @@ describe('renderer session persistence bridge', () => {
       loadPersistedSession({ projectId: selected.projectId, sessionId: selected.id }, { loadAll })
     ).resolves.toEqual(selected)
     expect(loadAll).toHaveBeenCalledOnce()
+  })
+
+  it('bypasses cached content for an authoritative reload', async () => {
+    const cached = materializeSessionConversationGraph(
+      createPersistedSession({ revision: 2, title: 'Cached title' })
+    )
+    const fresh = materializeSessionConversationGraph({
+      ...cached,
+      revision: 3,
+      title: 'Fresh title'
+    })
+    useSessionStore.getState().hydrateSessions([cached])
+    const loadOne = vi.fn().mockResolvedValueOnce(cached).mockResolvedValueOnce(fresh)
+    const api = createApi({ loadOne })
+    const request = { projectId: cached.projectId, sessionId: cached.id }
+
+    await expect(loadPersistedSession(request, api)).resolves.toBe(cached)
+    await expect(loadPersistedSession(request, api, { bypassCache: true })).resolves.toBe(fresh)
+    expect(loadOne).toHaveBeenCalledTimes(2)
   })
 
   it('hydrates the store from the per-session load result', async () => {
