@@ -1458,7 +1458,10 @@ class SessionPersistenceCoordinator implements DelegatedWorkRecordCommands {
   }
 
   saveManifest(request: SaveSessionManifestRequest): Promise<void> {
-    return this.operationScheduler.runManifest(() => this.repository.saveManifest(request))
+    return this.operationScheduler.runManifest(() => {
+      this.hydrationCache.invalidate()
+      return this.repository.saveManifest(request)
+    })
   }
 
   /**

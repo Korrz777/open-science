@@ -1844,7 +1844,7 @@ describe('artifact finalization startup recovery', () => {
     expect(discover).toHaveBeenCalledTimes(2)
   })
 
-  it('skips artifact scans for a clean idle Session with a prepared Project snapshot', async () => {
+  it('skips only finalization for a clean idle Session with a prepared Project snapshot', async () => {
     const compatibility = new ArtifactRepository(storageRoot)
     const { provenance } = await prepareRecovery(compatibility)
     const coordinator = new SessionPersistenceCoordinator(
@@ -1872,7 +1872,7 @@ describe('artifact finalization startup recovery', () => {
     })
 
     expect(finalization).not.toHaveBeenCalled()
-    expect(staging).not.toHaveBeenCalled()
+    expect(staging).toHaveBeenCalledOnce()
   })
 
   it('recovers a pending Version when another Version from the same run is already linked', async () => {

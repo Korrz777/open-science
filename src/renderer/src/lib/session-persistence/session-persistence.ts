@@ -1777,7 +1777,8 @@ const loadPersistedSessions = async (
               await loadPersistedSession(
                 { projectId: summary.projectId, sessionId: summary.id },
                 api,
-                { bypassCache: summary.needsStartupRecovery }
+                // Recovery must not validate cached content against the previous store revision.
+                { bypassCache: true }
               )
             ] as const
         )

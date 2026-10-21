@@ -620,7 +620,45 @@ describe('renderer session persistence bridge', () => {
     const request = { projectId: cached.projectId, sessionId: cached.id }
 
     await expect(loadPersistedSession(request, api)).resolves.toBe(cached)
+    await expect(loadPersistedSession(request, api)).resolves.toBe(cached)
+    expect(loadOne).toHaveBeenCalledOnce()
     await expect(loadPersistedSession(request, api, { bypassCache: true })).resolves.toBe(fresh)
+    expect(loadOne).toHaveBeenCalledTimes(2)
+  })
+
+  it('hydrates a newer catalog revision instead of the retained content cache', async () => {
+    const cached = materializeSessionConversationGraph(
+      createPersistedSession({ revision: 2, title: 'Old' })
+    )
+    const fresh = materializeSessionConversationGraph({ ...cached, revision: 3, title: 'New' })
+    useSessionStore.getState().hydrateSessions([cached])
+    const loadOne = vi.fn().mockResolvedValueOnce(cached).mockResolvedValue(fresh)
+    const summary: SessionSummary = {
+      number: 1,
+      id: fresh.id,
+      projectId: fresh.projectId,
+      title: fresh.title,
+      status: 'idle',
+      presentedStatus: 'idle',
+      pinned: false,
+      revision: 3,
+      activeMessageCount: 0,
+      artifactCount: 0,
+      filesRevision: 0,
+      createdAt: fresh.createdAt,
+      updatedAt: fresh.updatedAt,
+      needsStartupRecovery: false
+    }
+    const api = createApi({
+      loadOne,
+      list: vi.fn().mockResolvedValue({
+        sessions: [summary],
+        manifest: { version: SESSION_MANIFEST_VERSION, lastSessionId: fresh.id }
+      })
+    })
+    await loadPersistedSession({ projectId: cached.projectId, sessionId: cached.id }, api)
+    await loadPersistedSessions(api, () => true, { sessionId: cached.id }, true)
+    expect(useSessionStore.getState().sessions[0]).toMatchObject({ revision: 3, title: 'New' })
     expect(loadOne).toHaveBeenCalledTimes(2)
   })
 
