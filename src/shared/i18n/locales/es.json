@@ -7794,6 +7794,18 @@
     "Drop PDFs or reference files to import": "Soltar PDF o archivos de referencias para importarlos",
     "The Agent runtime could not apply the selected Specialist.": "El entorno de ejecución del Agente no pudo aplicar el Especialista seleccionado.",
     "The Specialist was applied, but its completion state could not be saved.": "Se aplicó el Especialista, pero no se pudo guardar el estado de finalización.",
-    "Your draft and queued messages are preserved.": "Se conservan el borrador y los mensajes en cola."
+    "Your draft and queued messages are preserved.": "Se conservan el borrador y los mensajes en cola.",
+    "Reading package…": "Leyendo el paquete…",
+    "Checking {{completed}} of {{total}} files…": "Comprobando {{completed}} de {{total}} archivos…",
+    "Verifying package files…": "Verificando los archivos del paquete…",
+    "Preparing package preview…": "Preparando la vista previa del paquete…",
+    "Checking package relationships…": "Comprobando las relaciones del paquete…",
+    "Importing files…": "Importando archivos…",
+    "Verifying imported files…": "Verificando los archivos importados…",
+    "Preparing final validation…": "Preparando la validación final…",
+    "Checking imported relationships…": "Comprobando las relaciones importadas…",
+    "Finishing import…": "Finalizando la importación…",
+    "Overall import progress (estimated)": "Progreso total de la importación (estimado)",
+    "Stage {{current}} of {{total}}": "Etapa {{current}} de {{total}}"
   }
 }

@@ -7933,6 +7933,18 @@
     "Drop PDFs or reference files to import": "Перетащите PDF или файлы библиографических записей для импорта",
     "The Agent runtime could not apply the selected Specialist.": "Среде выполнения Агента не удалось применить выбранного Специалиста.",
     "The Specialist was applied, but its completion state could not be saved.": "Специалист применён, но не удалось сохранить состояние завершения.",
-    "Your draft and queued messages are preserved.": "Ваш черновик и сообщения в очереди сохранены."
+    "Your draft and queued messages are preserved.": "Ваш черновик и сообщения в очереди сохранены.",
+    "Reading package…": "Чтение пакета…",
+    "Checking {{completed}} of {{total}} files…": "Проверка файлов: {{completed}} из {{total}}…",
+    "Verifying package files…": "Проверка файлов пакета…",
+    "Preparing package preview…": "Подготовка предпросмотра пакета…",
+    "Checking package relationships…": "Проверка связей в пакете…",
+    "Importing files…": "Импорт файлов…",
+    "Verifying imported files…": "Проверка импортированных файлов…",
+    "Preparing final validation…": "Подготовка окончательной проверки…",
+    "Checking imported relationships…": "Проверка импортированных связей…",
+    "Finishing import…": "Завершение импорта…",
+    "Overall import progress (estimated)": "Общий ход импорта (оценка)",
+    "Stage {{current}} of {{total}}": "Этап {{current}} из {{total}}"
   }
 }
