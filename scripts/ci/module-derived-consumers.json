@@ -910,6 +910,7 @@
       "src/renderer/src/pages/workspace/use-agent-authentication-recovery.test.tsx"
     ],
     "renderer_hooks": [
+      "src/renderer/src/components/FileDropZone.test.tsx",
       "src/renderer/src/lib/literature-renderer-host.test.ts",
       "src/renderer/src/pages/workspace/WorkspacePage.compute-entry.test.tsx",
       "src/renderer/src/pages/workspace/WorkspaceSidebar.session-gestures.test.tsx",
@@ -1083,14 +1084,6 @@
       "src/renderer/src/pages/workspace/workspace-session-delegation-control-owner.test.tsx",
       "src/renderer/src/stores/session-store.test.ts"
     ],
-    "renderer_shared_components": [
-      "src/renderer/src/lib/literature-renderer-host.test.ts",
-      "src/renderer/src/pages/workspace/LiteratureCandidateStatus.test.tsx",
-      "src/renderer/src/pages/workspace/LiteratureToolReferenceList.test.tsx",
-      "src/renderer/src/pages/workspace/WorkspacePage.compute-entry.test.tsx",
-      "src/renderer/src/pages/workspace/WorkspaceSidebar.session-gestures.test.tsx",
-      "src/renderer/src/pages/workspace/pdf-annotations/PdfAnnotationPreviewDialog.test.tsx"
-    ],
     "renderer_skill_catalog_state": [
       "src/renderer/src/pages/workspace/WorkspaceSidebar.session-gestures.test.tsx"
     ],
@@ -1112,6 +1105,7 @@
       "src/renderer/src/pages/workspace/pdf-annotations/PdfAnnotationPreviewDialog.test.tsx"
     ],
     "renderer_ui": [
+      "src/renderer/src/components/FileDropZone.test.tsx",
       "src/renderer/src/lib/literature-renderer-host.test.ts",
       "src/renderer/src/pages/workspace/LiteratureCandidateStatus.test.tsx",
       "src/renderer/src/pages/workspace/LiteratureToolReferenceList.test.tsx",
