@@ -965,7 +965,6 @@
       "src/renderer/src/pages/workspace/LiteratureCandidateStatus.test.tsx",
       "src/renderer/src/pages/workspace/WorkspacePage.compute-entry.test.tsx",
       "src/renderer/src/pages/workspace/WorkspaceSidebar.session-gestures.test.tsx",
-      "src/renderer/src/pages/workspace/agent-authentication-error.test.ts",
       "src/renderer/src/pages/workspace/pdf-annotations/PdfAnnotationPreviewDialog.test.tsx",
       "src/renderer/src/pages/workspace/use-agent-authentication-recovery.test.tsx"
     ],
@@ -1287,7 +1286,6 @@
       "src/renderer/src/pages/workspace/ReadingContextPicker.test.tsx",
       "src/renderer/src/pages/workspace/WorkspacePage.compute-entry.test.tsx",
       "src/renderer/src/pages/workspace/WorkspaceSidebar.session-gestures.test.tsx",
-      "src/renderer/src/pages/workspace/agent-authentication-error.test.ts",
       "src/renderer/src/pages/workspace/pdf-annotations/PdfAnnotationPreviewDialog.test.tsx",
       "src/renderer/src/pages/workspace/use-agent-authentication-recovery.test.tsx"
     ],
