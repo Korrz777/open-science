@@ -310,6 +310,7 @@ describe('application command composition', () => {
       'session-replay:save-view',
       'session-replay:unlink-session',
       'sessions:cancel-diagnostics',
+      'sessions:delete-recovery-file',
       'sessions:delete-session',
       'sessions:edit-details',
       'sessions:export-diagnostics',

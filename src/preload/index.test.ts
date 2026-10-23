@@ -65,6 +65,7 @@ type PreloadApi = {
     saveSession: (session: unknown, options?: unknown) => unknown
     setDelegationPolicy: (projectId: string, sessionId: string, policy: 'allow' | 'deny') => unknown
     editDetails: (request: unknown) => unknown
+    deleteRecoveryFile: (request: unknown) => unknown
     deleteSession: (request: unknown) => unknown
     saveManifest: (request: unknown) => unknown
     exportConversation: (request: unknown) => unknown
@@ -595,6 +596,7 @@ describe('preload bridge — public surface inventory', () => {
       'sessionReplay.saveView',
       'sessionReplay.unlinkSession',
       'sessions.cancelDiagnostics',
+      'sessions.deleteRecoveryFile',
       'sessions.deleteSession',
       'sessions.editDetails',
       'sessions.exportConversation',
@@ -1518,6 +1520,13 @@ const cases: ForwardingCase[] = [
     invoke: (a) => a.sessions.editDetails(sampleEditSessionDetails),
     channel: 'sessions:edit-details',
     args: [sampleEditSessionDetails]
+  },
+  {
+    name: 'sessions.deleteRecoveryFile → sessions:delete-recovery-file',
+    invoke: (a) =>
+      a.sessions.deleteRecoveryFile({ projectId: 'project-a', fileName: 'session-1.json' }),
+    channel: 'sessions:delete-recovery-file',
+    args: [{ projectId: 'project-a', fileName: 'session-1.json' }]
   },
   {
     name: 'sessions.deleteSession → sessions:delete-session',
