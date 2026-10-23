@@ -637,6 +637,7 @@ describe('Settings backend ownership architecture', () => {
       'listModelsCall',
       'viewImageCall',
       'requestUserInput',
+      'listAuthorizedDirectories',
       'memoryListCategories',
       'memorySearch',
       'memoryRemember'
