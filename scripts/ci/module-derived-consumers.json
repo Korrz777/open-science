@@ -413,6 +413,7 @@
       "src/main/acp/specialist-capability-resolution.test.ts",
       "src/main/local-fs/service.test.ts",
       "src/main/notebook/authorized-directories.integration.test.ts",
+      "src/main/process-tree-foreign-service.macos.integration.test.ts",
       "src/main/session-details/composition.test.ts"
     ],
     "notebook_analysis": [
