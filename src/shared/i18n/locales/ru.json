@@ -194,6 +194,10 @@
     "Cleaning up database inspection resources": "Очистка ресурсов проверки базы данных"
   },
   "renderer": {
+    "{{count}} steps remaining_one": "Остался {{count}} шаг",
+    "{{count}} steps remaining_few": "Осталось {{count}} шага",
+    "{{count}} steps remaining_many": "Осталось {{count}} шагов",
+    "{{count}} steps remaining_other": "Осталось {{count}} шага",
     "Input help": "Справка по вводу",
     "Your changes have not been saved. Discard them and leave the editor?": "Изменения не сохранены. Отменить их и выйти из редактора?",
     "Find experimental PDB chains with similar 3D structures using a deposited chain.": "Найти экспериментальные цепи PDB с похожими 3D-структурами по депонированной цепи.",
@@ -8035,6 +8039,8 @@
     "Export screening results (CSV)": "Экспортировать результаты отбора (CSV)",
     "Screening results could not be exported.": "Не удалось экспортировать результаты отбора.",
     "Screening data changed during export. Please try again.": "Данные отбора изменились во время экспорта. Повторите попытку.",
-    "Shell is waiting for network access. If the process has ended, approve and retry the command explicitly; it will not run again automatically.": "Командная строка ожидает разрешения на доступ к сети. Если процесс завершён, разрешите доступ и явно повторите команду. Автоматически она не запустится."
+    "Shell is waiting for network access. If the process has ended, approve and retry the command explicitly; it will not run again automatically.": "Командная строка ожидает разрешения на доступ к сети. Если процесс завершён, разрешите доступ и явно повторите команду. Автоматически она не запустится.",
+    "Fetch": "Получить",
+    "Switch Mode": "Переключить режим"
   }
 }
