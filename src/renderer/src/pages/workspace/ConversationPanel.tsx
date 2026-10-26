@@ -150,7 +150,7 @@ import { SessionSwitchSkeleton } from './SessionSwitchSkeleton'
 import { SubagentAvailabilityNotice, SubagentsBar } from './SubagentReleaseSurfaces'
 import { TurnOutcomeNotice, type TurnOutcomeActions } from './TurnOutcomeNotice'
 import { WorkspaceDelegatedQuestionCard } from './WorkspaceDelegatedQuestionCard'
-import { WorkspaceElicitationCard } from './WorkspaceElicitationCard'
+import { WorkspaceElicitationCard, WorkspaceElicitationRecovery } from './WorkspaceElicitationCard'
 import { WorkspaceMessageScroller } from './WorkspaceMessageScroller'
 import { AnnotationDraftCards } from './annotations/AnnotationCards'
 import { requestAnnotationReveal } from './annotations/annotation-reveal'
@@ -1154,7 +1154,9 @@ const ConversationPanel = ({
     ? sessionActivities.find((activity) => activity.id === pendingElicitationRequest.toolCallId)
     : undefined
   const pendingElicitation: ElicitationProjection | undefined =
-    pendingElicitationActivity?.elicitation?.state === 'pending'
+    pendingElicitationActivity?.elicitation &&
+    (pendingElicitationActivity.elicitation.state === 'pending' ||
+      pendingElicitationActivity.elicitation.continuationRecovery)
       ? pendingElicitationActivity.elicitation
       : !pendingElicitationActivity && pendingElicitationRequest
         ? {
@@ -2124,7 +2126,8 @@ const ConversationPanel = ({
                     </div>
                   ) : null}
 
-                  {ordinaryComposerBlocked && !authenticationRequired ? (
+                  {ordinaryComposerBlocked &&
+                  (!authenticationRequired || pendingElicitation?.continuationRecovery) ? (
                     <div
                       data-testid="blocking-composer-overlay"
                       className="absolute inset-x-0 bottom-0 z-30"
@@ -2153,6 +2156,19 @@ const ConversationPanel = ({
                             embedded
                           />
                         </ResizableCredentialComposer>
+                      ) : pendingElicitation?.continuationRecovery ? (
+                        <WorkspaceElicitationRecovery
+                          key={pendingElicitationRequest?.requestId}
+                          elicitation={{
+                            ...pendingElicitation,
+                            continuationRecovery: {
+                              ...pendingElicitation.continuationRecovery,
+                              error: actionError ?? pendingElicitation.continuationRecovery.error
+                            }
+                          }}
+                          request={pendingElicitationRequest}
+                          onRespond={onRespondToElicitation}
+                        />
                       ) : pendingElicitation ? (
                         <ResizableElicitationComposer
                           choice={Boolean(
