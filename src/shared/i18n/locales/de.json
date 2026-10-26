@@ -7762,6 +7762,15 @@
     "Fetch": "Abrufen",
     "Switch Mode": "Modus wechseln",
     "{{count}} previous messages_one": "{{count}} vorherige Nachricht",
-    "{{count}} previous messages_other": "{{count}} vorherige Nachrichten"
+    "{{count}} previous messages_other": "{{count}} vorherige Nachrichten",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "Dieses Lesezeichen konnte nicht entfernt werden. Ihre gespeicherten Repositorys bleiben erhalten.",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "Das Entfernen eines Lesezeichens behält installierte Fähigkeiten bei. Gespeicherte Repositorys aktualisieren Fähigkeiten nicht automatisch.",
+    "Save repository": "Repository speichern",
+    "Could not load saved repositories.": "Gespeicherte Repositorys konnten nicht geladen werden.",
+    "Remove saved repository {{name}}": "Gespeichertes Repository {{name}} entfernen",
+    "Saved repositories": "Gespeicherte Repositorys",
+    "Scan a repository, then save it here for next time.": "Scannen Sie ein Repository und speichern Sie es hier für das nächste Mal.",
+    "Default branch": "Standardbranch",
+    "Could not save this repository. Try again.": "Dieses Repository konnte nicht gespeichert werden. Versuchen Sie es erneut."
   }
 }

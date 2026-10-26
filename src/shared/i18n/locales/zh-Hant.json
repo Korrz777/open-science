@@ -7600,6 +7600,15 @@
     "No saved publication check. Run a check to look for related notices.": "沒有已儲存的文獻檢查。執行檢查以尋找相關通知。",
     "Fetch": "擷取",
     "Switch Mode": "切換模式",
-    "{{count}} previous messages_other": "先前的 {{count}} 則訊息"
+    "{{count}} previous messages_other": "先前的 {{count}} 則訊息",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "無法移除此書籤，已儲存的儲存庫已保留。",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "移除書籤不會刪除已安裝的技能。已儲存的儲存庫不會自動更新技能。",
+    "Save repository": "儲存儲存庫",
+    "Could not load saved repositories.": "無法載入已儲存的儲存庫。",
+    "Remove saved repository {{name}}": "移除已儲存的儲存庫 {{name}}",
+    "Saved repositories": "已儲存的儲存庫",
+    "Scan a repository, then save it here for next time.": "掃描儲存庫後，可將其儲存在這裡，方便下次使用。",
+    "Default branch": "預設分支",
+    "Could not save this repository. Try again.": "無法儲存此儲存庫，請重試。"
   }
 }

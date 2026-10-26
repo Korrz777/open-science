@@ -7600,6 +7600,15 @@
     "No saved publication check. Run a check to look for related notices.": "保存済みの文献確認はありません。確認を実行して関連する通知を検索してください。",
     "Fetch": "取得",
     "Switch Mode": "モードを切り替え",
-    "{{count}} previous messages_other": "これまでの {{count}} 件のメッセージ"
+    "{{count}} previous messages_other": "これまでの {{count}} 件のメッセージ",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "このブックマークを削除できませんでした。保存済みリポジトリは保持されています。",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "ブックマークを削除しても、インストール済みのスキルは保持されます。保存済みリポジトリはスキルを自動更新しません。",
+    "Save repository": "リポジトリを保存",
+    "Could not load saved repositories.": "保存済みリポジトリを読み込めませんでした。",
+    "Remove saved repository {{name}}": "保存済みリポジトリ {{name}} を削除",
+    "Saved repositories": "保存済みリポジトリ",
+    "Scan a repository, then save it here for next time.": "リポジトリをスキャンした後、次回のためにここに保存できます。",
+    "Default branch": "デフォルトブランチ",
+    "Could not save this repository. Try again.": "このリポジトリを保存できませんでした。もう一度お試しください。"
   }
 }

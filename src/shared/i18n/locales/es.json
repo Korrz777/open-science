@@ -7932,6 +7932,15 @@
     "Switch Mode": "Cambiar modo",
     "{{count}} previous messages_one": "{{count}} mensaje anterior",
     "{{count}} previous messages_many": "{{count}} mensajes anteriores",
-    "{{count}} previous messages_other": "{{count}} mensajes anteriores"
+    "{{count}} previous messages_other": "{{count}} mensajes anteriores",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "No se pudo eliminar este marcador. Se han conservado los repositorios guardados.",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "Al eliminar un marcador, se conservan sus habilidades instaladas. Los repositorios guardados no actualizan las habilidades automáticamente.",
+    "Save repository": "Guardar repositorio",
+    "Could not load saved repositories.": "No se pudieron cargar los repositorios guardados.",
+    "Remove saved repository {{name}}": "Eliminar el repositorio guardado {{name}}",
+    "Saved repositories": "Repositorios guardados",
+    "Scan a repository, then save it here for next time.": "Escanee un repositorio y guárdelo aquí para la próxima vez.",
+    "Default branch": "Rama predeterminada",
+    "Could not save this repository. Try again.": "No se pudo guardar este repositorio. Inténtelo de nuevo."
   }
 }

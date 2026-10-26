@@ -8073,6 +8073,15 @@
     "{{count}} previous messages_one": "{{count}} предыдущее сообщение",
     "{{count}} previous messages_few": "{{count}} предыдущих сообщения",
     "{{count}} previous messages_many": "{{count}} предыдущих сообщений",
-    "{{count}} previous messages_other": "{{count}} предыдущего сообщения"
+    "{{count}} previous messages_other": "{{count}} предыдущего сообщения",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "Не удалось удалить закладку. Сохранённые репозитории оставлены без изменений.",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "Удаление закладки не удаляет установленные навыки. Сохранённые репозитории не обновляют навыки автоматически.",
+    "Save repository": "Сохранить репозиторий",
+    "Could not load saved repositories.": "Не удалось загрузить сохранённые репозитории.",
+    "Remove saved repository {{name}}": "Удалить сохранённый репозиторий {{name}}",
+    "Saved repositories": "Сохранённые репозитории",
+    "Scan a repository, then save it here for next time.": "Сканируйте репозиторий и сохраните его здесь для следующего раза.",
+    "Default branch": "Ветка по умолчанию",
+    "Could not save this repository. Try again.": "Не удалось сохранить репозиторий. Повторите попытку."
   }
 }

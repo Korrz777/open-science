@@ -7932,6 +7932,15 @@
     "Switch Mode": "Changer de mode",
     "{{count}} previous messages_one": "{{count}} message précédent",
     "{{count}} previous messages_many": "{{count}} messages précédents",
-    "{{count}} previous messages_other": "{{count}} messages précédents"
+    "{{count}} previous messages_other": "{{count}} messages précédents",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "Impossible de supprimer ce favori. Vos dépôts enregistrés ont été conservés.",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "La suppression d’un favori conserve ses compétences installées. Les dépôts enregistrés ne mettent pas les compétences à jour automatiquement.",
+    "Save repository": "Enregistrer le dépôt",
+    "Could not load saved repositories.": "Impossible de charger les dépôts enregistrés.",
+    "Remove saved repository {{name}}": "Supprimer le dépôt enregistré {{name}}",
+    "Saved repositories": "Dépôts enregistrés",
+    "Scan a repository, then save it here for next time.": "Analysez un dépôt, puis enregistrez-le ici pour la prochaine fois.",
+    "Default branch": "Branche par défaut",
+    "Could not save this repository. Try again.": "Impossible d’enregistrer ce dépôt. Réessayez."
   }
 }

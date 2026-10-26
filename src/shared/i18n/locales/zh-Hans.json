@@ -7600,6 +7600,15 @@
     "No saved publication check. Run a check to look for related notices.": "没有已保存的文献检查。运行检查以查找相关通知。",
     "Fetch": "获取",
     "Switch Mode": "切换模式",
-    "{{count}} previous messages_other": "之前的 {{count}} 条消息"
+    "{{count}} previous messages_other": "之前的 {{count}} 条消息",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "无法移除此收藏，已保存的仓库已保留。",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "移除收藏不会删除已安装的技能。已保存的仓库不会自动更新技能。",
+    "Save repository": "保存仓库",
+    "Could not load saved repositories.": "无法加载已保存的仓库。",
+    "Remove saved repository {{name}}": "移除已保存的仓库 {{name}}",
+    "Saved repositories": "已保存的仓库",
+    "Scan a repository, then save it here for next time.": "扫描仓库后，可将其保存在这里，方便下次使用。",
+    "Default branch": "默认分支",
+    "Could not save this repository. Try again.": "无法保存此仓库，请重试。"
   }
 }

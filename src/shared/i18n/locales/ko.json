@@ -7598,6 +7598,15 @@
     "No saved publication check. Run a check to look for related notices.": "저장된 출판물 확인이 없습니다. 확인을 실행해 관련 공지를 찾아보세요.",
     "Fetch": "가져오기",
     "Switch Mode": "모드 전환",
-    "{{count}} previous messages_other": "이전 메시지 {{count}}개"
+    "{{count}} previous messages_other": "이전 메시지 {{count}}개",
+    "Could not remove this bookmark. Your saved repositories have been preserved.": "이 북마크를 삭제하지 못했습니다. 저장된 저장소는 유지됩니다.",
+    "Removing a bookmark keeps its installed Skills. Saved repositories do not update Skills automatically.": "북마크를 삭제해도 설치된 스킬은 유지됩니다. 저장된 저장소는 스킬을 자동으로 업데이트하지 않습니다.",
+    "Save repository": "저장소 저장",
+    "Could not load saved repositories.": "저장된 저장소를 불러오지 못했습니다.",
+    "Remove saved repository {{name}}": "저장된 저장소 {{name}} 삭제",
+    "Saved repositories": "저장된 저장소",
+    "Scan a repository, then save it here for next time.": "저장소를 스캔한 후 다음에 사용할 수 있도록 여기에 저장하세요.",
+    "Default branch": "기본 브랜치",
+    "Could not save this repository. Try again.": "이 저장소를 저장하지 못했습니다. 다시 시도하세요."
   }
 }
