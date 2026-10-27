@@ -185,6 +185,8 @@
     "Cleaning up database inspection resources": "데이터베이스 검사 리소스 정리"
   },
   "renderer": {
+    "Read the security policy and report vulnerabilities.": "보안 정책을 확인하고 취약점을 신고하세요.",
+    "Security": "보안",
     "Reading status": "읽기 상태",
     "In progress": "읽는 중",
     "Finished reading": "읽기 완료",

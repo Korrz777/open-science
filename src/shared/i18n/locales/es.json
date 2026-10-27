@@ -187,6 +187,8 @@
     "Cleaning up database inspection resources": "Limpieza de los recursos de inspección de la base de datos"
   },
   "renderer": {
+    "Read the security policy and report vulnerabilities.": "Consultar la política de seguridad y comunicar vulnerabilidades.",
+    "Security": "Seguridad",
     "Reading status": "Estado de lectura",
     "In progress": "En lectura",
     "Finished reading": "Lectura finalizada",

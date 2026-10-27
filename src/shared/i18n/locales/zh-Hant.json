@@ -185,6 +185,8 @@
     "Cleaning up database inspection resources": "清理資料庫檢查資源"
   },
   "renderer": {
+    "Read the security policy and report vulnerabilities.": "查看安全政策並回報漏洞。",
+    "Security": "安全",
     "Reading status": "閱讀狀態",
     "In progress": "閱讀中",
     "Finished reading": "已讀",
