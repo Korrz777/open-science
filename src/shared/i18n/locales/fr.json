@@ -7950,6 +7950,13 @@
     "Updating restarts the app and interrupts affected tasks. Open-Science will save your changes and stop those tasks after you confirm.": "La mise à jour redémarre l’application et interrompt les tâches concernées. Après votre confirmation, Open-Science enregistrera vos modifications et arrêtera ces tâches.",
     "Updating restarts the app and interrupts affected tasks, including work using this service through other connections. Open-Science will save your changes and stop those tasks. Interrupted tasks will not restart automatically.": "La mise à jour redémarre l’application et interrompt les tâches concernées, y compris celles utilisant ce service via d’autres connexions. Open-Science enregistrera vos modifications et arrêtera ces tâches. Elles ne reprendront pas automatiquement.",
     "Continuing in a new context using your saved conversation history.": "La conversation continue dans un nouveau contexte à partir de l’historique enregistré.",
-    "The previous execution is still using this conversation. Retry to stop it before continuing.": "L’exécution précédente utilise encore cette conversation. Réessayez pour l’arrêter avant de continuer."
+    "The previous execution is still using this conversation. Retry to stop it before continuing.": "L’exécution précédente utilise encore cette conversation. Réessayez pour l’arrêter avant de continuer.",
+    "Granted at {{time}}": "Accès accordé le {{time}}",
+    "{{count}} directories_one": "{{count}} dossier",
+    "{{count}} directories_many": "{{count}} dossiers",
+    "{{count}} directories_other": "{{count}} dossiers",
+    "Show remaining {{count}} directories_one": "Afficher le {{count}} dossier restant",
+    "Show remaining {{count}} directories_many": "Afficher les {{count}} dossiers restants",
+    "Show remaining {{count}} directories_other": "Afficher les {{count}} dossiers restants"
   }
 }

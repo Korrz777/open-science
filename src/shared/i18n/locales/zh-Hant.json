@@ -7618,6 +7618,9 @@
     "Updating restarts the app and interrupts affected tasks. Open-Science will save your changes and stop those tasks after you confirm.": "更新需要重新啟動應用程式，並會中斷受影響的工作。確認後，Open-Science 會儲存變更並結束這些工作。",
     "Updating restarts the app and interrupts affected tasks, including work using this service through other connections. Open-Science will save your changes and stop those tasks. Interrupted tasks will not restart automatically.": "更新需要重新啟動應用程式，並會中斷受影響的工作，包括透過其他連線使用此服務的工作。Open-Science 會儲存變更並結束這些工作。中斷的工作不會自動繼續。",
     "Continuing in a new context using your saved conversation history.": "正在使用新的上下文，根據已儲存的對話歷史繼續。",
-    "The previous execution is still using this conversation. Retry to stop it before continuing.": "上一次執行仍在使用此對話。請重試，由應用程式先結束該執行再繼續。"
+    "The previous execution is still using this conversation. Retry to stop it before continuing.": "上一次執行仍在使用此對話。請重試，由應用程式先結束該執行再繼續。",
+    "Granted at {{time}}": "授權於 {{time}}",
+    "{{count}} directories_other": "{{count}} 個目錄",
+    "Show remaining {{count}} directories_other": "顯示剩餘 {{count}} 個"
   }
 }
