@@ -1,7 +1,9 @@
+import { importSessionPackage } from '@/lib/session-package-import'
 import {
   packageOperationPresentation,
   primaryBrowserTransfer
 } from '@/lib/package-operation-presentation'
+import { WEB_CALLER_LOCATION_ATTRIBUTE } from '../../../shared/web-caller-location'
 import { WEB_EVENT_SURFACE_ATTRIBUTE } from '../../../shared/web-event-connection'
 import { PackageImportSelection } from './PackageImportSelection'
 import { PackageImportQueue } from './PackageImportQueue'
@@ -619,6 +621,39 @@ const PackageDialogLayout = ({
   )
 }
 
+// Local Web receives a staged package path instead of a desktop save dialog, so the browser
+// saves it on demand. The save has to start inside this click: once the export promise resolves
+// the user gesture is gone and showSaveFilePicker would reject with NotAllowedError.
+const WebPackageDownloadButton = ({ filePath }: { filePath: string }): React.JSX.Element => {
+  const { t } = useTranslation()
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const name = filePath.split(/[\\/]/).pop() ?? filePath
+  const label =
+    status === 'saving'
+      ? t('Saving {{name}}', { name })
+      : status === 'saved'
+        ? t('Saved {{name}}', { name })
+        : status === 'error'
+          ? t('Download failed for {{name}}', { name })
+          : t('Download {{name}}', { name })
+  return (
+    <Button
+      variant="outline"
+      disabled={status === 'saving'}
+      aria-busy={status === 'saving'}
+      onClick={() => {
+        setStatus('saving')
+        window.api
+          .saveManagedFile({ source: 'local', path: filePath, suggestedName: name })
+          .then((result) => setStatus(result.saved ? 'saved' : 'idle'))
+          .catch(() => setStatus('error'))
+      }}
+    >
+      {label}
+    </Button>
+  )
+}
+
 export const SessionPackageOperation = (): React.JSX.Element | null => {
   const { t } = useTranslation()
   const speedId = useId()
@@ -629,7 +664,7 @@ export const SessionPackageOperation = (): React.JSX.Element | null => {
     open,
     receive,
     setOpen,
-    dismiss
+    dismiss: dismissLocal
   } = usePackageOperationStore()
   const operation = packageOperationPresentation(sourceOperation, browserReceipt)
   const destinationName = useProjectStore(
@@ -648,8 +683,11 @@ export const SessionPackageOperation = (): React.JSX.Element | null => {
   const titleRef = useRef<HTMLHeadingElement>(null)
   const navigationIntent = useRef<{ operationId: string; revision: number } | undefined>(undefined)
   const isWeb = document.documentElement.getAttribute(WEB_EVENT_SURFACE_ATTRIBUTE) === 'true'
+  // Only remote Web loses the dialog: local Web and Electron both own these operations.
+  const isRemoteWeb =
+    isWeb && document.documentElement.getAttribute(WEB_CALLER_LOCATION_ATTRIBUTE) === 'remote'
   useEffect(() => {
-    if (isWeb) return
+    if (isRemoteWeb) return
     const native = window.api?.packagePresentation
     const subscribe = native?.onStateChanged ?? window.api?.sessions?.onPackageOperation
     if (!subscribe) return
@@ -672,7 +710,7 @@ export const SessionPackageOperation = (): React.JSX.Element | null => {
       disposed = true
       remove()
     }
-  }, [receive, isWeb])
+  }, [receive, isRemoteWeb])
   const openedImport = useRef<string | undefined>(undefined)
   useEffect(() => {
     if (
@@ -695,7 +733,7 @@ export const SessionPackageOperation = (): React.JSX.Element | null => {
       })
       .catch(() => undefined)
   }, [sourceOperation, isWeb])
-  if (isWeb || !operation) return null
+  if (isRemoteWeb || !operation) return null
   const errorId = operation.browserReceiptOnly
     ? (primaryBrowserTransfer(operation)?.id ?? operation.id)
     : operation.id
@@ -737,6 +775,30 @@ export const SessionPackageOperation = (): React.JSX.Element | null => {
       })
     }
   }
+  const dismiss = (): void => {
+    if (
+      isWeb &&
+      operation.kind === 'import' &&
+      operation.state === 'failed' &&
+      operation.importRequestId &&
+      !operation.cleanupPending &&
+      !operation.result?.recovery
+    ) {
+      void window.api.sessions
+        .packageOperation({
+          action: 'discard-import',
+          operationId: operation.id,
+          requestId: operation.importRequestId
+        })
+        .then(dismissLocal)
+        .catch((caught) =>
+          setError({
+            id: errorId,
+            message: caught instanceof Error ? caught.message : String(caught)
+          })
+        )
+    } else dismissLocal()
+  }
   const retry = async (
     chooseAnotherPackage = false,
     allowSensitiveContent = false
@@ -764,6 +826,7 @@ export const SessionPackageOperation = (): React.JSX.Element | null => {
         else await window.api.sessions.exportPackage(operation.session)
       } else if (operation.importRequestId && !chooseAnotherPackage)
         await respond({ action: 'retry-import', operationId: operation.id })
+      else if (isWeb) await importSessionPackage(operation.importTarget?.projectId)
       else await window.api.sessions.importPackage(operation.importTarget)
     } catch (caught) {
       setError({
@@ -1257,7 +1320,17 @@ export const SessionPackageOperation = (): React.JSX.Element | null => {
                       <span className="tabular-nums">({operation.pendingImports?.length})</span>
                     </Button>
                   ) : null}
-                  {operation.state === 'succeeded' && operation.result?.filePath ? (
+                  {operation.kind === 'export' &&
+                  operation.state === 'succeeded' &&
+                  operation.result?.filePath &&
+                  isWeb ? (
+                    <WebPackageDownloadButton
+                      key={operation.result.filePath}
+                      filePath={operation.result.filePath}
+                    />
+                  ) : null}
+                  {/* A headless host has no desktop shell to reveal the staged path in. */}
+                  {operation.state === 'succeeded' && operation.result?.filePath && !isWeb ? (
                     <Button
                       onClick={() => void respond({ action: 'reveal', operationId: operation.id })}
                     >
